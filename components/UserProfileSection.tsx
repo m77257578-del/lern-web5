@@ -14,7 +14,7 @@ import {
   User, Phone, Mail, Calendar, Rocket, ShieldCheck, 
   Save, CheckCircle2, AlertCircle, Edit3, Clock, Sparkles, LogOut, Trash2, BarChart3,
   MessageSquare, Send, Upload, Camera, Package, Globe, Check, History, Activity, ShieldAlert,
-  X, Filter, FileCheck
+  X, Filter, FileCheck, FileSpreadsheet, FileText, Download, Printer, Search
 } from 'lucide-react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { storageService } from '../src/services/storageService';
@@ -45,6 +45,7 @@ export default function UserProfileSection({
   const [isSaved, setIsSaved] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const [activityFilter, setActivityFilter] = useState('all');
+  const [searchQuery, setSearchQuery] = useState('');
 
   const activityData = [
     { day: isRtl ? 'السبت' : 'Sat', hours: 2 },
@@ -223,9 +224,208 @@ export default function UserProfileSection({
   ];
 
   const filteredLogs = rawLogs.filter(log => {
-    if (activityFilter === 'all') return true;
-    return log.category === activityFilter;
+    const matchesCategory = activityFilter === 'all' || log.category === activityFilter;
+    if (!matchesCategory) return false;
+
+    if (!searchQuery.trim()) return true;
+    const q = searchQuery.toLowerCase().trim();
+    const titleAr = (log.titleAr || '').toLowerCase();
+    const titleEn = (log.titleEn || '').toLowerCase();
+    const detailsAr = (log.detailsAr || '').toLowerCase();
+    const detailsEn = (log.detailsEn || '').toLowerCase();
+    const category = (log.category || '').toLowerCase();
+    const timestamp = new Date(log.timestamp).toLocaleString().toLowerCase();
+
+    return (
+      titleAr.includes(q) ||
+      titleEn.includes(q) ||
+      detailsAr.includes(q) ||
+      detailsEn.includes(q) ||
+      category.includes(q) ||
+      timestamp.includes(q)
+    );
   });
+
+  const filteredSystems = purchasedSystems.filter((sys: any) => {
+    if (!searchQuery.trim()) return true;
+    const q = searchQuery.toLowerCase().trim();
+    const title = (sys.title || '').toLowerCase();
+    const license = (sys.license || '').toLowerCase();
+    const date = (sys.date || '').toLowerCase();
+
+    return title.includes(q) || license.includes(q) || date.includes(q);
+  });
+
+  // Handle Exporting Activity Log to Excel (CSV with UTF-8 BOM)
+  const handleExportCSV = () => {
+    const headers = isRtl 
+      ? ['المعرف', 'الفئة', 'عنوان النشاط', 'التفاصيل', 'التاريخ والوقت']
+      : ['ID', 'Category', 'Activity Title', 'Details', 'Timestamp'];
+
+    const rows = filteredLogs.map((log) => {
+      const formattedDate = new Date(log.timestamp).toLocaleString(isRtl ? 'ar-EG' : 'en-US', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+      return [
+        `"${log.id}"`,
+        `"${log.category.toUpperCase()}"`,
+        `"${(isRtl ? log.titleAr : log.titleEn).replace(/"/g, '""')}"`,
+        `"${(isRtl ? log.detailsAr : log.detailsEn).replace(/"/g, '""')}"`,
+        `"${formattedDate}"`
+      ];
+    });
+
+    const csvContent = '\uFEFF' + [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    const dateStr = new Date().toISOString().slice(0, 10);
+    link.setAttribute('href', url);
+    link.setAttribute('download', `sijill_alnashat_lernweb_${currentUser?.name || 'client'}_${dateStr}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+
+    // Record Activity
+    storageService.addActivityLog(
+      'user_updated' as any,
+      `قام العميل بطلب وتصدير سجل النشاط بفرمت Excel (CSV)`,
+      `User exported activity log report in Excel (CSV) format`
+    );
+  };
+
+  // Handle Exporting Activity Log to PDF / Printable View
+  const handleExportPDF = () => {
+    const dateStr = new Date().toLocaleDateString(isRtl ? 'ar-EG' : 'en-US', {
+      year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit'
+    });
+
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) return;
+
+    const rowsHtml = filteredLogs.map((log, idx) => {
+      const formattedDate = new Date(log.timestamp).toLocaleString(isRtl ? 'ar-EG' : 'en-US', {
+        year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
+      });
+      return `
+        <tr style="border-bottom: 1px solid #e2e8f0; ${idx % 2 === 0 ? 'background-color: #f8fafc;' : ''}">
+          <td style="padding: 10px 12px; font-weight: bold; color: #2563eb;">#${idx + 1}</td>
+          <td style="padding: 10px 12px;"><span style="display: inline-block; padding: 2px 8px; border-radius: 6px; font-size: 11px; font-weight: bold; background: #e0e7ff; color: #3730a3;">${log.category.toUpperCase()}</span></td>
+          <td style="padding: 10px 12px; font-weight: bold; color: #0f172a;">${isRtl ? log.titleAr : log.titleEn}</td>
+          <td style="padding: 10px 12px; color: #334155; font-size: 12px;">${isRtl ? log.detailsAr : log.detailsEn}</td>
+          <td style="padding: 10px 12px; font-family: monospace; font-size: 12px; color: #64748b; white-space: nowrap;">${formattedDate}</td>
+        </tr>
+      `;
+    }).join('');
+
+    const filterLabelMapAr: Record<string, string> = {
+      all: 'الكل (جميع الأحداث)',
+      login: 'تسجيل دخول',
+      profile: 'تحديث بيانات',
+      order: 'طلب جديد وتنفيذ العمليات',
+      verification: 'تأكيد التوثيق'
+    };
+    const currentFilterLabel = isRtl 
+      ? (filterLabelMapAr[activityFilter] || 'الكل') 
+      : activityFilter.toUpperCase();
+
+    printWindow.document.write(`
+      <!DOCTYPE html>
+      <html dir="${isRtl ? 'rtl' : 'ltr'}" lang="${isRtl ? 'ar' : 'en'}">
+      <head>
+        <meta charset="utf-8">
+        <title>${isRtl ? 'تقرير سجل النشاط التفصيلي - ليرن ويب' : 'Detailed Activity Log Report - Lern Web'}</title>
+        <style>
+          body { font-family: system-ui, -apple-system, sans-serif; padding: 30px; color: #0f172a; line-height: 1.5; }
+          .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #2563eb; padding-bottom: 15px; margin-bottom: 20px; }
+          .brand { font-size: 22px; font-weight: 900; color: #1e40af; }
+          .subtitle { font-size: 12px; color: #64748b; }
+          .meta-card { background: #f1f5f9; border-radius: 12px; padding: 15px; margin-bottom: 25px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; font-size: 13px; }
+          .meta-item { display: flex; flex-direction: column; }
+          .meta-label { font-size: 11px; color: #64748b; font-weight: bold; }
+          .meta-val { font-weight: bold; color: #0f172a; margin-top: 2px; }
+          table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 13px; text-align: ${isRtl ? 'right' : 'left'}; }
+          th { background: #1e293b; color: #ffffff; padding: 12px; font-weight: bold; font-size: 12px; }
+          .footer { margin-top: 40px; padding-top: 15px; border-top: 1px solid #cbd5e1; font-size: 11px; color: #64748b; text-align: center; }
+          @media print {
+            body { padding: 0; }
+            .no-print { display: none; }
+          }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <div>
+            <div class="brand">ليرن ويب | LERN WEB</div>
+            <div class="subtitle">${isRtl ? 'تقرير شفافية الحساب وسجل النشاط التفصيلي للعميل' : 'Client Detailed Activity Log & Audit Report'}</div>
+          </div>
+          <button class="no-print" onclick="window.print()" style="background: #2563eb; color: white; border: none; padding: 10px 20px; border-radius: 8px; font-weight: bold; cursor: pointer;">
+            ${isRtl ? '🖨️ طباعة / حفظ PDF' : '🖨️ Print / Save PDF'}
+          </button>
+        </div>
+
+        <div class="meta-card">
+          <div class="meta-item">
+            <span class="meta-label">${isRtl ? 'اسم العميل:' : 'Client Name:'}</span>
+            <span class="meta-val">${currentUser?.name || (isRtl ? 'عميل المنظومة' : 'Valued Client')}</span>
+          </div>
+          <div class="meta-item">
+            <span class="meta-label">${isRtl ? 'الهاتف / المعرف:' : 'Phone / ID:'}</span>
+            <span class="meta-val">${currentUser?.phone || ''} (${currentUser?.id || 'client-id'})</span>
+          </div>
+          <div class="meta-item">
+            <span class="meta-label">${isRtl ? 'توع التصفية:' : 'Filter Applied:'}</span>
+            <span class="meta-val" style="color: #2563eb;">${currentFilterLabel}</span>
+          </div>
+          <div class="meta-item">
+            <span class="meta-label">${isRtl ? 'تاريخ التصدير:' : 'Export Date:'}</span>
+            <span class="meta-val">${dateStr}</span>
+          </div>
+        </div>
+
+        <h3 style="font-size: 16px; margin-bottom: 10px; color: #1e293b;">
+          ${isRtl ? 'تفاصيل سجل الأحداث والعمليات (' + filteredLogs.length + ' سجل):' : 'Logged Events & Operations (' + filteredLogs.length + ' logs):'}
+        </h3>
+
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>${isRtl ? 'الفئة' : 'Category'}</th>
+              <th>${isRtl ? 'عنوان النشاط' : 'Activity Title'}</th>
+              <th>${isRtl ? 'التفاصيل' : 'Details'}</th>
+              <th>${isRtl ? 'التاريخ والوقت' : 'Timestamp'}</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${rowsHtml}
+          </tbody>
+        </table>
+
+        <div class="footer">
+          ${isRtl ? 'تم إصدار هذا المستند أوتوماتيكياً من منصة ليرن ويب (Lern Web Cloud) لتعزيز الشفافية والتحكم للعميل.' : 'Document automatically generated by Lern Web Cloud for client transparency and compliance.'}
+        </div>
+
+        <script>
+          setTimeout(() => { window.print(); }, 500);
+        </script>
+      </body>
+      </html>
+    `);
+    printWindow.document.close();
+
+    // Record Activity
+    storageService.addActivityLog(
+      'user_updated' as any,
+      `قام العميل بطلب وتصدير سجل النشاط بفرمت PDF`,
+      `User exported activity log report in PDF format`
+    );
+  };
 
   return (
     <div className="rounded-3xl border border-slate-800 bg-slate-900/90 p-6 md:p-8 shadow-xl space-y-8 animate-fadeIn">
@@ -342,9 +542,9 @@ export default function UserProfileSection({
         </div>
       </div>
 
-      {/* DEDICATED ACTIVITY LOG SECTION (سجل النشاط والشفافية) */}
+      {/* DEDICATED ACTIVITY LOG SECTION (سجل النشاط والشفافية مع خيارات التصدير) */}
       <div className="rounded-3xl border border-blue-500/30 bg-gradient-to-br from-slate-950 via-blue-950/20 to-slate-950 p-6 md:p-8 space-y-5 shadow-2xl">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-slate-800 pb-4">
+        <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 border-b border-slate-800 pb-4">
           <div className="space-y-1">
             <div className="inline-flex items-center gap-2 rounded-full bg-blue-500/20 px-3 py-1 text-xs font-bold text-blue-400 border border-blue-500/30">
               <History className="w-4 h-4 text-blue-400" />
@@ -360,34 +560,124 @@ export default function UserProfileSection({
             </p>
           </div>
 
-          <div className="flex items-center gap-2 overflow-x-auto pb-1 sm:pb-0">
-            {[
-              { id: 'all', labelAr: 'الكل', labelEn: 'All' },
-              { id: 'login', labelAr: 'الدخول', labelEn: 'Login' },
-              { id: 'profile', labelAr: 'تعديل البيانات', labelEn: 'Profile' },
-              { id: 'order', labelAr: 'تنفيذ الطلبات', labelEn: 'Orders' },
-              { id: 'verification', labelAr: 'التوثيق', labelEn: 'Verified' }
-            ].map(f => (
+          {/* Export Action Buttons (PDF & Excel) */}
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              onClick={handleExportPDF}
+              className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 text-white text-xs font-bold shadow-md transition active:scale-95 cursor-pointer"
+              title={isRtl ? 'تصدير وحفظ التقرير كملف PDF' : 'Export & Save report as PDF'}
+            >
+              <FileText className="w-4 h-4" />
+              <span>{isRtl ? 'تصدير PDF 📄' : 'Export PDF 📄'}</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={handleExportCSV}
+              className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white text-xs font-bold shadow-md transition active:scale-95 cursor-pointer"
+              title={isRtl ? 'تصدير السجل إلى جدول إكسيل (CSV)' : 'Export log to Excel spreadsheet (CSV)'}
+            >
+              <FileSpreadsheet className="w-4 h-4" />
+              <span>{isRtl ? 'تصدير Excel 📊' : 'Export Excel 📊'}</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Dedicated Search Bar for Activity Logs & Order History */}
+        <div className="space-y-2 pt-2 border-t border-slate-800/80">
+          <div className="relative flex items-center">
+            <Search className="w-4 h-4 text-blue-400 absolute right-3.5 pointer-events-none" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder={isRtl 
+                ? '🔍 ابحث في تاريخ الطلبات، سجل الدخول، المشتريات وتعديلات الحساب...' 
+                : '🔍 Search order history, login records, purchases, and profile updates...'}
+              className="w-full rounded-2xl border border-blue-500/40 bg-slate-900/90 pr-10 pl-10 py-3 text-xs md:text-sm text-white placeholder-slate-400 focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-500/20 transition shadow-inner"
+            />
+            {searchQuery && (
               <button
-                key={f.id}
-                onClick={() => setActivityFilter(f.id)}
-                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer whitespace-nowrap ${
-                  activityFilter === f.id 
-                    ? 'bg-blue-600 text-white shadow-md' 
-                    : 'bg-slate-900 border border-slate-800 text-slate-300 hover:bg-slate-800'
-                }`}
+                type="button"
+                onClick={() => setSearchQuery('')}
+                className="absolute left-3 p-1 rounded-full text-slate-400 hover:text-white hover:bg-slate-800 transition cursor-pointer"
+                title={isRtl ? 'مسح البحث' : 'Clear search'}
               >
-                {isRtl ? f.labelAr : f.labelEn}
+                <X className="w-3.5 h-3.5" />
               </button>
-            ))}
+            )}
+          </div>
+
+          {searchQuery.trim() && (
+            <div className="text-[11px] text-blue-300 font-bold flex items-center justify-between px-1">
+              <span>
+                {isRtl 
+                  ? `نتائج مطابقة للبحث "${searchQuery}": (${filteredLogs.length} سجل نشاط، ${filteredSystems.length} منصات/طلبات)` 
+                  : `Results for "${searchQuery}": (${filteredLogs.length} activity logs, ${filteredSystems.length} orders)`}
+              </span>
+              <button
+                type="button"
+                onClick={() => setSearchQuery('')}
+                className="text-amber-400 hover:text-amber-300 underline cursor-pointer"
+              >
+                {isRtl ? 'إلغاء البحث ✕' : 'Clear Search ✕'}
+              </button>
+            </div>
+          )}
+        </div>
+
+        {/* Filters and Search toolbar */}
+        <div className="flex items-center justify-between gap-3 overflow-x-auto pb-1">
+          <span className="text-xs text-slate-400 font-bold hidden sm:inline">
+            {isRtl ? `عدد الأحداث: (${filteredLogs.length})` : `Total Events: (${filteredLogs.length})`}
+          </span>
+
+          <div className="flex items-center gap-2 overflow-x-auto">
+            {[
+              { id: 'all', labelAr: 'الكل 🌐', labelEn: 'All' },
+              { id: 'login', labelAr: 'تسجيل دخول 🔑', labelEn: 'Login' },
+              { id: 'profile', labelAr: 'تحديث بيانات 📝', labelEn: 'Profile Updates' },
+              { id: 'order', labelAr: 'طلب جديد 🛒', labelEn: 'New Orders' },
+              { id: 'verification', labelAr: 'توثيق الحساب 🛡️', labelEn: 'Verification' }
+            ].map(f => {
+              const count = rawLogs.filter(l => f.id === 'all' || l.category === f.id).length;
+              return (
+                <button
+                  key={f.id}
+                  type="button"
+                  onClick={() => setActivityFilter(f.id)}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer whitespace-nowrap flex items-center gap-1.5 ${
+                    activityFilter === f.id 
+                      ? 'bg-blue-600 text-white shadow-md ring-2 ring-blue-400/30' 
+                      : 'bg-slate-900 border border-slate-800 text-slate-300 hover:bg-slate-800'
+                  }`}
+                >
+                  <span>{isRtl ? f.labelAr : f.labelEn}</span>
+                  <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-mono ${
+                    activityFilter === f.id ? 'bg-white/20 text-white' : 'bg-slate-800 text-slate-400'
+                  }`}>
+                    {count}
+                  </span>
+                </button>
+              );
+            })}
           </div>
         </div>
 
         {/* Activity Timeline Items */}
         <div className="space-y-3">
           {filteredLogs.length === 0 ? (
-            <div className="text-center py-8 bg-slate-900/60 rounded-2xl border border-slate-800 text-slate-400 text-xs">
-              {isRtl ? 'لا توجد سجلات نشاط مطابقة للتصفية المختارة' : 'No activity logs matching selected filter'}
+            <div className="text-center py-8 bg-slate-900/60 rounded-2xl border border-slate-800 text-slate-400 text-xs space-y-2">
+              <p>{isRtl ? 'لا توجد سجلات نشاط مطابقة للبحث أو التصفية المختارة' : 'No activity logs matching selected search or filter'}</p>
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery('')}
+                  className="px-3 py-1 rounded-xl bg-blue-600/30 text-blue-300 hover:bg-blue-600/50 text-xs font-bold transition cursor-pointer"
+                >
+                  {isRtl ? 'إعادة ضبط البحث' : 'Reset Search'}
+                </button>
+              )}
             </div>
           ) : (
             filteredLogs.map((log) => {
@@ -441,29 +731,35 @@ export default function UserProfileSection({
             <span>{isRtl ? 'الأنظمة والمنصات التي قمت بشرائها واشتراكها:' : 'Purchased Systems & Platforms:'}</span>
           </h4>
           <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-blue-500/20 text-blue-300 border border-blue-500/30">
-            {purchasedSystems.length} {isRtl ? 'نظام معتمد' : 'Systems'}
+            {filteredSystems.length} {isRtl ? 'نظام معتمد' : 'Systems'}
           </span>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {purchasedSystems.map((sys: any, idx: number) => (
-            <div key={sys.id || idx} className="rounded-xl border border-slate-800 bg-slate-900 p-4 space-y-2 flex flex-col justify-between shadow-md">
-              <div className="space-y-1">
-                <div className="flex items-center justify-between text-xs">
-                  <span className="px-2 py-0.5 rounded bg-blue-600/20 text-blue-400 font-bold">{sys.license}</span>
-                  <span className="text-slate-400 font-mono text-[11px]">{sys.date}</span>
-                </div>
-                <h5 className="font-bold text-sm text-white">{sys.title}</h5>
-              </div>
-              <div className="pt-2 flex items-center justify-between text-[11px] text-emerald-400 font-semibold border-t border-slate-800/80">
-                <span className="flex items-center gap-1">
-                  <Check className="w-3.5 h-3.5" />
-                  <span>{isRtl ? 'جاهز للتشغيل والتحميل' : 'Ready to Run & Download'}</span>
-                </span>
-                <span className="font-mono text-slate-400">Lern Web Cloud</span>
-              </div>
+          {filteredSystems.length === 0 ? (
+            <div className="col-span-full text-center py-6 text-slate-400 text-xs">
+              {isRtl ? 'لا توجد أنظمة أو طلبات مطابقة للبحث' : 'No purchased systems matching search query'}
             </div>
-          ))}
+          ) : (
+            filteredSystems.map((sys: any, idx: number) => (
+              <div key={sys.id || idx} className="rounded-xl border border-slate-800 bg-slate-900 p-4 space-y-2 flex flex-col justify-between shadow-md">
+                <div className="space-y-1">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="px-2 py-0.5 rounded bg-blue-600/20 text-blue-400 font-bold">{sys.license}</span>
+                    <span className="text-slate-400 font-mono text-[11px]">{sys.date}</span>
+                  </div>
+                  <h5 className="font-bold text-sm text-white">{sys.title}</h5>
+                </div>
+                <div className="pt-2 flex items-center justify-between text-[11px] text-emerald-400 font-semibold border-t border-slate-800/80">
+                  <span className="flex items-center gap-1">
+                    <Check className="w-3.5 h-3.5" />
+                    <span>{isRtl ? 'جاهز للتشغيل والتحميل' : 'Ready to Run & Download'}</span>
+                  </span>
+                  <span className="font-mono text-slate-400">Lern Web Cloud</span>
+                </div>
+              </div>
+            ))
+          )}
         </div>
       </div>
 
