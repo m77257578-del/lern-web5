@@ -1203,7 +1203,7 @@ export default function App() {
 
         <p>
           {isRtl 
-            ? 'منظومة ليرن ويب | Lern Web التعليمية المتكاملة • محرك PWA • نظام إدارة محتوى (CMS) • محاكي الذكاء الاصطناعي' 
+            ? 'منظومة ليرن ويب | Lern Web التعليمية المتكاملة • محرك PWA • نظام إدارة محتوى (CMS) • التواصل المباشر مع الإدارة' 
             : 'Lern Web Cloud Educational Ecosystem • Dynamic Single Page Architecture • Full CMS & Dedicated Control Panel'}
         </p>
 
@@ -1250,13 +1250,14 @@ export default function App() {
         />
       )}
 
-      {/* Floating AI Assistant Chat Widget */}
+      {/* Floating Support & Administration Chat Widget */}
       <div className="fixed bottom-6 right-6 z-50">
         <button
           onClick={() => setIsAiChatOpen(!isAiChatOpen)}
-          className="rounded-full bg-gradient-to-r from-blue-600 to-indigo-600 p-4 text-white shadow-2xl hover:scale-105 transition"
+          className="rounded-full bg-gradient-to-r from-blue-600 to-indigo-600 p-4 text-white shadow-2xl hover:scale-105 transition cursor-pointer"
+          title={isRtl ? 'مراسلة الإدارة والدعم الفني المباشر' : 'Contact Administration & Support'}
         >
-          {isAiChatOpen ? <X className="w-8 h-8" /> : <Bot className="w-8 h-8" />}
+          {isAiChatOpen ? <X className="w-8 h-8" /> : <MessageSquare className="w-8 h-8" />}
         </button>
       </div>
 

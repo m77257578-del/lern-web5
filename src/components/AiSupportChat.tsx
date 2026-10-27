@@ -515,7 +515,7 @@ export default function AiSupportChat({ lang = 'ar', currentUser }: AiSupportCha
         userEmail,
         { 
           sender: 'ai', 
-          senderName: aiReplyResult.provider === 'chatgpt' ? 'ChatGPT (OpenAI)' : 'المساعد الذكي (Gemini)', 
+          senderName: isRtl ? 'إدارة منصة ليرن ويب والدعم الفني' : 'Lern Web Admin & Support', 
           text: aiReplyResult.text,
           provider: (aiReplyResult.provider as any) || selectedProvider,
           model: aiReplyResult.model || selectedModel
@@ -525,8 +525,8 @@ export default function AiSupportChat({ lang = 'ar', currentUser }: AiSupportCha
     } catch (err: any) {
       console.warn('AI chat remote fallback activated:', err);
       const fallbackReply = isRtl
-        ? `⚠️ تعذر استلام الرد المباشر حالياً: ${err?.message || 'تم تحويل طلبك للإدارة'}.\n\nفريق الدعم الفني وإدارة ليرن ويب يتابعون رسالتك لحظياً، ويمكنك التواصل المباشر مع مهندسينا عبر واتساب: 201024889921.`
-        : `⚠️ Remote generation unavailable: ${err?.message || 'Forwarded to support team'}.\n\nLern Web engineering team is monitoring your query live. You can reach out directly via WhatsApp: 201024889921.`;
+        ? `⚠️ تم استلام رسالتك وتسجيلها في تذاكر الإدارة.\n\nفريق الدعم الفني وإدارة ليرن ويب يتابعون رسالتك لحظياً، ويمكنك التواصل المباشر مع مهندسينا عبر واتساب: 201024889921.`
+        : `⚠️ Message received and logged into admin tickets.\n\nLern Web engineering team is monitoring your query live. You can reach out directly via WhatsApp: 201024889921.`;
 
       const updatedTicket = storageService.addMessageToTicket(
         userId,
@@ -535,7 +535,7 @@ export default function AiSupportChat({ lang = 'ar', currentUser }: AiSupportCha
         userEmail,
         { 
           sender: 'ai', 
-          senderName: 'المساعد الذكي (AI Fallback)', 
+          senderName: isRtl ? 'إدارة منصة ليرن ويب والدعم الفني' : 'Lern Web Admin & Support', 
           text: fallbackReply,
           provider: selectedProvider,
           model: selectedModel
@@ -552,13 +552,12 @@ export default function AiSupportChat({ lang = 'ar', currentUser }: AiSupportCha
     {
       id: 'welcome-msg',
       sender: 'ai',
-      senderName: 'المساعد الذكي (Gemini & ChatGPT)',
+      senderName: isRtl ? 'فريق إدارة ليرن ويب والدعم الفني' : 'Lern Web Management & Support',
       text: isRtl 
-        ? `مرحباً بك ${userName}! أنا المهندس الذكي لمنصة ليرن ويب (Lern Web). \n\n⚡ **إمكانياتي المتطورة:**\n- إرسال صور ومستندات وملفات لاختبارها وتحليلها فورياً 📷📄\n- مجمع ذكي يتجاوز **25 مفتاح جيمناي نشط** مع تدوير تلقائي فوري دون انقطاع\n- إمكانية التبديل إلى **ChatGPT (OpenAI)** بنقرة واحدة\n- إحاطة شاملة وفورية بكافة مشاريع المتجر، باقات التملك، طرق الدفع، وطلبات التعديل.\n\nكيف يمكنني مساعدتك الآن؟`
-        : `Welcome ${userName}! I am the Lern Web Platform Omniscient AI Architect.\n\n⚡ **Key Capabilities:**\n- Multimodal image and document uploads with instant deep semantic analysis 📷📄\n- Smart pool with **25+ active Gemini keys** featuring instantaneous automatic failover\n- One-click toggle to **ChatGPT (OpenAI)**\n- Live awareness of all marketplace tools, source code buyout plans, payment wallets, and customization drafts.\n\nHow can I help you today?`,
+        ? `مرحباً بك يا ${userName}! يمكنك كتابة استفساراتك، أفكارك، أو طلباتك مباشرة هنا، وسيقوم فريق إدارة منصة ليرن ويب والدعم الفني بالمتابعة والرد عليك فوراً في هذه المحادثة.`
+        : `Welcome ${userName}! Send your inquiries or requests directly here, and the Lern Web management and technical support team will reply to you immediately.`,
       timestamp: new Date().toISOString(),
-      provider: 'gemini',
-      model: 'gemini-3.8-flash'
+      provider: 'gemini'
     }
   ];
 
@@ -568,68 +567,19 @@ export default function AiSupportChat({ lang = 'ar', currentUser }: AiSupportCha
       <div className="bg-gradient-to-r from-slate-900 via-slate-800 to-indigo-950 p-3.5 border-b border-slate-700/80 flex items-center justify-between shadow-md">
         <div className="flex items-center gap-2.5">
           <div className="bg-gradient-to-tr from-blue-600 to-indigo-600 p-2 rounded-xl text-white shadow-md shadow-blue-600/30">
-            <Bot className="w-4 h-4" />
+            <ShieldCheck className="w-4 h-4 text-white" />
           </div>
           <div>
             <div className="flex items-center gap-2 flex-wrap">
               <h3 className="text-xs sm:text-sm font-bold text-white flex items-center gap-1.5">
-                <span>{isRtl ? 'المساعد الذكي الشامل' : 'Omniscient AI Assistant'}</span>
+                <span>{isRtl ? 'مراسلة الإدارة والدعم الفني المباشر' : 'Direct Support & Administration'}</span>
               </h3>
-
-              {/* Engine Selector Dropdown */}
-              <div className="flex items-center gap-1 bg-slate-950/80 border border-slate-700/80 rounded-lg p-0.5 text-[10px]">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setSelectedProvider('gemini');
-                    setSelectedModel('gemini-3.8-flash');
-                  }}
-                  className={`px-2 py-0.5 rounded-md font-semibold transition cursor-pointer flex items-center gap-1 ${
-                    selectedProvider === 'gemini'
-                      ? 'bg-blue-600 text-white shadow-sm'
-                      : 'text-slate-400 hover:text-white'
-                  }`}
-                  title="Google Gemini (25+ Keys Auto-Rotation)"
-                >
-                  <Sparkles className="w-2.5 h-2.5" />
-                  <span>Gemini 3.8</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setSelectedProvider('chatgpt');
-                    setSelectedModel('gpt-4o-mini');
-                  }}
-                  className={`px-2 py-0.5 rounded-md font-semibold transition cursor-pointer flex items-center gap-1 ${
-                    selectedProvider === 'chatgpt'
-                      ? 'bg-emerald-600 text-white shadow-sm'
-                      : 'text-slate-400 hover:text-white'
-                  }`}
-                  title="OpenAI ChatGPT (GPT-4o & GPT-4o-mini)"
-                >
-                  <Cpu className="w-2.5 h-2.5" />
-                  <span>ChatGPT</span>
-                </button>
-              </div>
-
-              {/* Key Pool Status Badge */}
-              <button
-                type="button"
-                onClick={() => setIsKeyPoolModalOpen(true)}
-                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 hover:bg-emerald-500/25 transition cursor-pointer"
-                title={isRtl ? 'عرض حالة مجمع المفاتيح الذكي' : 'View Key Pool Status'}
-              >
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                <span>{keyPoolStatus.totalKeys}+ {isRtl ? 'مفتاح نشط' : 'Keys Pool'}</span>
-              </button>
             </div>
 
             <div className="flex items-center gap-1.5 mt-0.5">
-              <span className="text-[10px] text-slate-400">
-                {selectedProvider === 'gemini' 
-                  ? (isRtl ? '⚡ تدوير تلقائي فوري • قراءة الصور والمستندات' : '⚡ Auto-Rotating 25+ Gemini Keys • Multimodal Vision')
-                  : (isRtl ? '🤖 محرك ChatGPT من OpenAI • قراءة الوسائط' : '🤖 OpenAI ChatGPT Engine • Multimodal Analysis')
-                }
+              <span className="flex h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
+              <span className="text-[10px] text-slate-300 font-semibold">
+                {isRtl ? 'إدارة ليرن ويب • متصل الآن لخدمتك' : 'Lern Web Admin • Online'}
               </span>
             </div>
           </div>
@@ -710,20 +660,12 @@ export default function AiSupportChat({ lang = 'ar', currentUser }: AiSupportCha
               <div className={`w-7 h-7 rounded-xl flex items-center justify-center shrink-0 shadow ${
                 isUser 
                   ? 'bg-blue-600 text-white' 
-                  : isAdmin 
-                    ? 'bg-gradient-to-tr from-amber-500 to-indigo-600 text-white ring-2 ring-amber-400/40' 
-                    : msg.provider === 'chatgpt'
-                      ? 'bg-emerald-950 border border-emerald-600 text-emerald-400'
-                      : 'bg-slate-800 border border-slate-700 text-blue-400'
+                  : 'bg-gradient-to-tr from-amber-600 to-blue-600 text-white shadow-amber-500/20'
               }`}>
                 {isUser ? (
                   <User className="w-3.5 h-3.5" />
-                ) : isAdmin ? (
-                  <Crown className="w-3.5 h-3.5 text-amber-200" />
-                ) : msg.provider === 'chatgpt' ? (
-                  <Cpu className="w-3.5 h-3.5" />
                 ) : (
-                  <Bot className="w-3.5 h-3.5" />
+                  <ShieldCheck className="w-3.5 h-3.5 text-white" />
                 )}
               </div>
 
@@ -731,26 +673,17 @@ export default function AiSupportChat({ lang = 'ar', currentUser }: AiSupportCha
               <div className={`max-w-[85%] rounded-2xl px-3.5 py-2.5 text-xs leading-relaxed shadow-md space-y-1.5 ${
                 isUser 
                   ? 'bg-blue-600 text-white rounded-br-none' 
-                  : isAdmin 
-                    ? 'bg-gradient-to-r from-indigo-950 via-slate-900 to-slate-950 border border-amber-500/50 text-amber-100 rounded-bl-none ring-1 ring-amber-500/20' 
-                    : 'bg-slate-800/95 border border-slate-700 text-slate-200 rounded-bl-none'
+                  : 'bg-gradient-to-r from-indigo-950 via-slate-900 to-slate-950 border border-amber-500/40 text-amber-100 rounded-bl-none'
               }`}>
-                {/* Admin or Provider Header */}
+                {/* Admin Header */}
                 <div className="flex items-center justify-between gap-2 pb-1 border-b border-white/10 text-[9px]">
                   <span className="font-bold opacity-80 flex items-center gap-1">
-                    {isAdmin ? (
-                      <>
-                        <ShieldCheck className="w-3 h-3 text-amber-400" />
-                        <span className="text-amber-300">{isRtl ? 'رد من إدارة ليرن ويب' : 'Official Admin'}</span>
-                      </>
-                    ) : isUser ? (
+                    {isUser ? (
                       <span>{userName}</span>
                     ) : (
                       <>
-                        <Sparkles className="w-2.5 h-2.5 text-blue-400" />
-                        <span className="text-blue-300">
-                          {msg.provider === 'chatgpt' ? 'ChatGPT (OpenAI)' : 'Lern Web AI (Gemini)'}
-                        </span>
+                        <ShieldCheck className="w-3 h-3 text-amber-400" />
+                        <span className="text-amber-300">{isRtl ? 'إدارة منصة ليرن ويب والدعم الفني' : 'Lern Web Admin & Support'}</span>
                       </>
                     )}
                   </span>
@@ -804,14 +737,12 @@ export default function AiSupportChat({ lang = 'ar', currentUser }: AiSupportCha
         {isThinking && (
           <div className="flex items-end gap-2">
             <div className="w-7 h-7 rounded-xl bg-slate-800 border border-slate-700 flex items-center justify-center">
-              <Bot className="w-3.5 h-3.5 text-blue-400 animate-spin" />
+              <ShieldCheck className="w-3.5 h-3.5 text-blue-400 animate-pulse" />
             </div>
             <div className="bg-slate-800/90 border border-slate-700 px-4 py-2.5 rounded-2xl rounded-bl-none text-xs text-slate-300 flex items-center gap-2">
               <span className="w-2 h-2 rounded-full bg-blue-400 animate-ping" />
               <span>
-                {selectedProvider === 'chatgpt' 
-                  ? (isRtl ? 'جاري التحليل عبر ChatGPT وقراءة المرفقات...' : 'Processing through ChatGPT...')
-                  : (isRtl ? 'جاري الفحص عبر مجمع مفاتيح Gemini (25+ مفتاح)...' : 'Processing via Gemini 25+ Key Pool...')}
+                {isRtl ? 'جاري تحويل الرسالة وتسجيلها في نظام تذاكر الإدارة...' : 'Transmitting message to admin ticket system...'}
               </span>
             </div>
           </div>
@@ -950,9 +881,9 @@ export default function AiSupportChat({ lang = 'ar', currentUser }: AiSupportCha
         </form>
 
         <div className="flex items-center justify-between text-[9px] text-slate-500 mt-2 px-1">
-          <span>{isRtl ? '💡 يمكنك لصق لقطات الشاشة مباشرة (Ctrl+V)' : '💡 Paste screenshots directly'}</span>
+          <span>{isRtl ? '💡 يمكنك إرفاق مستندات أو لصق صور مباشرة (Ctrl+V)' : '💡 Paste screenshots directly'}</span>
           <span className="font-mono text-emerald-400">
-            {selectedProvider === 'chatgpt' ? 'OpenAI ChatGPT' : `Gemini Pool (${keyPoolStatus.totalKeys}+ Keys)`}
+            {isRtl ? 'فريق الدعم والإدارة متصل' : 'Admin Support Online'}
           </span>
         </div>
       </div>
