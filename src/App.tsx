@@ -12,6 +12,7 @@ import {
   CheckCircle2, Menu, X, Share2, Terminal, Copy, Check, Lock, User, Sparkles, Printer, BarChart3, Rocket, Clock, Bot, LogOut, LayoutDashboard, FileText, HelpCircle,
   Crown, Sliders, Bell, ArrowDown, ChevronUp, Radio, Compass, MessageSquare, Zap, ExternalLink, Activity, ArrowRight, Star, CreditCard, ChevronRight, ChevronLeft, Cpu
 } from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
 
 import AppStore from '../components/AppStore';
 import FaqSection from '../components/FaqSection';
@@ -1251,20 +1252,95 @@ export default function App() {
       )}
 
       {/* Floating Support & Administration Chat Widget */}
-      <div className="fixed bottom-6 right-6 z-50">
-        <button
-          onClick={() => setIsAiChatOpen(!isAiChatOpen)}
-          className="rounded-full bg-gradient-to-r from-blue-600 to-indigo-600 p-4 text-white shadow-2xl hover:scale-105 transition cursor-pointer"
-          title={isRtl ? 'المساعد الذكي والدعم الآلي المباشر (24/7)' : 'AI Assistant & Automated Support'}
-        >
-          {isAiChatOpen ? <X className="w-8 h-8" /> : <MessageSquare className="w-8 h-8" />}
-        </button>
-      </div>
+      {adminSettings.isAiChatEnabled !== false && (
+        <>
+          <motion.div 
+            className="fixed bottom-6 right-6 z-50"
+            initial={{ scale: 0, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.9 }}
+          >
+            {/* Glowing Aura Effect */}
+            <motion.div
+              className="absolute inset-0 rounded-full bg-blue-500/40 blur-xl"
+              animate={{
+                scale: [1, 1.4, 1],
+                opacity: [0.3, 0.7, 0.3],
+              }}
+              transition={{
+                duration: 3,
+                repeat: Infinity,
+                ease: "easeInOut",
+              }}
+            />
 
-      {isAiChatOpen && (
-        <div className="fixed bottom-24 left-4 right-4 md:left-auto md:right-8 z-[9999] w-auto md:w-96 max-w-[calc(100vw-2rem)] shadow-2xl">
-          <AiSupportChat lang={lang} currentUser={currentUser} />
-        </div>
+            <motion.button
+              onClick={() => setIsAiChatOpen(!isAiChatOpen)}
+              className="relative rounded-full bg-gradient-to-br from-indigo-600 via-blue-600 to-purple-600 p-4 text-white shadow-2xl transition-all duration-300 cursor-pointer border border-white/20 overflow-hidden"
+              animate={{
+                y: [0, -6, 0],
+              }}
+              transition={{
+                duration: 4,
+                repeat: Infinity,
+                ease: "easeInOut",
+              }}
+              title={isRtl ? 'المساعد الذكي والدعم الآلي المباشر (24/7)' : 'AI Assistant & Automated Support'}
+            >
+              {/* Inner breathing pulse overlay */}
+              <motion.div
+                className="absolute inset-0 bg-white/10"
+                animate={{
+                  opacity: [0, 0.2, 0],
+                }}
+                transition={{
+                  duration: 2,
+                  repeat: Infinity,
+                  ease: "linear",
+                }}
+              />
+              
+              <AnimatePresence mode="wait">
+                {isAiChatOpen ? (
+                  <motion.div
+                    key="close"
+                    initial={{ rotate: -90, opacity: 0, scale: 0.5 }}
+                    animate={{ rotate: 0, opacity: 1, scale: 1 }}
+                    exit={{ rotate: 90, opacity: 0, scale: 0.5 }}
+                    transition={{ duration: 0.2 }}
+                  >
+                    <X className="w-8 h-8" />
+                  </motion.div>
+                ) : (
+                  <motion.div
+                    key="bot"
+                    initial={{ scale: 0.5, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    exit={{ scale: 1.5, opacity: 0 }}
+                    transition={{ duration: 0.2 }}
+                  >
+                    <Bot className="w-8 h-8" />
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </motion.button>
+          </motion.div>
+
+          <AnimatePresence>
+            {isAiChatOpen && (
+              <motion.div 
+                className="fixed bottom-24 left-4 right-4 md:left-auto md:right-8 z-[9999] w-auto md:w-96 max-w-[calc(100vw-2rem)] shadow-2xl"
+                initial={{ opacity: 0, y: 50, scale: 0.9, filter: "blur(10px)" }}
+                animate={{ opacity: 1, y: 0, scale: 1, filter: "blur(0px)" }}
+                exit={{ opacity: 0, y: 50, scale: 0.9, filter: "blur(10px)" }}
+                transition={{ type: "spring", damping: 25, stiffness: 300 }}
+              >
+                <AiSupportChat lang={lang} currentUser={currentUser} settings={adminSettings} />
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </>
       )}
 
       <WelcomeModal

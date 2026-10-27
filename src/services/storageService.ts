@@ -197,6 +197,11 @@ export interface AdminSettings {
   openAiApiKey?: string;
   geminiKeyPool?: string[];
   preferredAiProvider?: 'gemini' | 'chatgpt';
+  isAiChatEnabled?: boolean;
+  aiWelcomeMessageAr?: string;
+  aiWelcomeMessageEn?: string;
+  aiFallbackReplyAr?: string;
+  aiFallbackReplyEn?: string;
   seoSettings: SeoSettings;
 }
 

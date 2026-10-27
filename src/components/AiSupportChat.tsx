@@ -18,9 +18,10 @@ import {
 interface AiSupportChatProps {
   lang?: 'ar' | 'en';
   currentUser?: any;
+  settings?: any;
 }
 
-export default function AiSupportChat({ lang = 'ar', currentUser }: AiSupportChatProps) {
+export default function AiSupportChat({ lang = 'ar', currentUser, settings }: AiSupportChatProps) {
   const isRtl = lang === 'ar';
   const scrollRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -525,8 +526,8 @@ export default function AiSupportChat({ lang = 'ar', currentUser }: AiSupportCha
     } catch (err: any) {
       console.warn('AI chat fallback activated:', err);
       const fallbackReply = isRtl
-        ? `أهلاً بك يا ${userName}! أنا المساعد الذكي لشركة ليرن ويب. يمكنك الاستفسار عن باقات الاشتراك، أسعار التملك، أرقام المحافظ، أو تجربة المحاكي وسأجيبك فوراً.`
-        : `Welcome ${userName}! I am the Lern Web AI Assistant. Ask me about plans, pricing, wallets, or the sandbox simulator!`;
+        ? (settings?.aiFallbackReplyAr || `أهلاً بك يا ${userName}! أنا المساعد الذكي لشركة ليرن ويب. يمكنك الاستفسار عن باقات الاشتراك، أسعار التملك، أرقام المحافظ، أو تجربة المحاكي وسأجيبك فوراً.`)
+        : (settings?.aiFallbackReplyEn || `Welcome ${userName}! I am the Lern Web AI Assistant. Ask me about plans, pricing, wallets, or the sandbox simulator!`);
 
       const updatedTicket = storageService.addMessageToTicket(
         userId,
@@ -554,15 +555,15 @@ export default function AiSupportChat({ lang = 'ar', currentUser }: AiSupportCha
       sender: 'ai',
       senderName: isRtl ? 'المساعد الذكي لمنصة ليرن ويب' : 'Lern Web AI Assistant',
       text: isRtl 
-        ? `مرحباً بك يا ${userName}! أنا المساعد الذكي الرسمي لمنصة ليرن ويب (Lern Web AI). أنا مطلع لحظياً على كافة المنظومات، باقات التراخيص، أرقام المحافظ، وإعدادات المحاكي. اكتب سؤالك، أو ألصق صورة/ملف وسأجيبك فوراً!`
-        : `Welcome ${userName}! I am the official Lern Web AI Assistant. Ask me about certified systems, pricing, payment wallets, or sandbox simulator, and I will answer instantly!`,
+        ? (settings?.aiWelcomeMessageAr || `مرحباً بك يا ${userName}! أنا المساعد الذكي الرسمي لمنصة ليرن ويب (Lern Web AI). أنا مطلع لحظياً على كافة المنظومات، باقات التراخيص، أرقام المحافظ، وإعدادات المحاكي. اكتب سؤالك، أو ألصق صورة/ملف وسأجيبك فوراً!`)
+        : (settings?.aiWelcomeMessageEn || `Welcome ${userName}! I am the official Lern Web AI Assistant. Ask me about certified systems, pricing, payment wallets, or sandbox simulator, and I will answer instantly!`),
       timestamp: new Date().toISOString(),
       provider: 'gemini'
     }
   ];
 
   return (
-    <div className="flex flex-col h-[560px] max-h-[80vh] rounded-3xl border border-slate-700/80 bg-slate-900 shadow-2xl overflow-hidden shadow-blue-500/10 animate-fadeIn">
+    <div className="flex flex-col h-[560px] max-h-[80vh] rounded-3xl border border-blue-500/50 bg-slate-900/95 backdrop-blur-md shadow-[0_0_20px_rgba(37,99,235,0.3)] overflow-hidden animate-fadeIn">
       {/* Top Header */}
       <div className="bg-gradient-to-r from-slate-900 via-slate-800 to-indigo-950 p-3.5 border-b border-slate-700/80 flex items-center justify-between shadow-md">
         <div className="flex items-center gap-2.5">

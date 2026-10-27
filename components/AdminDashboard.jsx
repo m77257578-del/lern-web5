@@ -151,13 +151,35 @@ export default function AdminDashboard({
   const [isCopilotLoading, setIsCopilotLoading] = useState(false);
   const [copilotGeneratedItem, setCopilotGeneratedItem] = useState(null);
 
-  // AI Key Pool & Models Management State
-  const [keyPoolStatus, setKeyPoolStatus] = useState({ totalKeys: 25, activeKeys: 25, coolingDownKeys: 0, slots: [] });
+  const [isAiChatEnabled, setIsAiChatEnabled] = useState(settings.isAiChatEnabled !== false);
   const [customGeminiKeyInput, setCustomGeminiKeyInput] = useState('');
-  const [openAiKeySettingInput, setOpenAiKeySettingInput] = useState(() => settings.openAiApiKey || '');
-  const [preferredAiEngineSetting, setPreferredAiEngineSetting] = useState(() => settings.preferredAiProvider || 'gemini');
+  const [keyPoolStatus, setKeyPoolStatus] = useState({ totalKeys: 25, activeKeys: 25, coolingDownKeys: 0, slots: [] });
   const [isAiKeysLoading, setIsAiKeysLoading] = useState(false);
+  const [openAiKeySettingInput, setOpenAiKeySettingInput] = useState(settings?.openAiApiKey || '');
+  const [preferredAiEngineSetting, setPreferredAiEngineSetting] = useState(settings?.preferredAiProvider || 'gemini');
 
+  const saveAiSettings = async () => {
+    setIsAiKeysLoading(true);
+    try {
+      await fetch('/api/admin/ai-settings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          isAiChatEnabled, 
+          customGeminiKeyInput,
+          aiWelcomeMessageAr: settings.aiWelcomeMessageAr,
+          aiWelcomeMessageEn: settings.aiWelcomeMessageEn,
+          aiFallbackReplyAr: settings.aiFallbackReplyAr,
+          aiFallbackReplyEn: settings.aiFallbackReplyEn
+        })
+      });
+      triggerSaveNotification(isRtl ? 'تم حفظ إعدادات الذكاء الاصطناعي!' : 'AI settings saved!');
+    } catch (e) {
+      triggerSaveNotification(isRtl ? 'حدث خطأ!' : 'Error!');
+    } finally {
+      setIsAiKeysLoading(false);
+    }
+  };
   const fetchKeyPoolAdminStatus = async () => {
     try {
       const res = await fetch('/api/ai/keys-status');
@@ -1436,8 +1458,7 @@ export default function AdminDashboard({
         {/* Main Section Navigation Tabs */}
         <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-slate-800 bg-slate-900/90 p-1.5 shadow">
           {[
-            { id: 'admin-ai', label: isRtl ? '🤖 المساعد الذكي للأدمن (Copilot)' : '🤖 Admin AI Copilot', icon: Bot, highlight: true },
-            { id: 'ai-keys', label: isRtl ? '⚡ مجمع مفاتيح الذكاء الاصطناعي (25+ مفتاح)' : '⚡ AI Keys Pool & Models', icon: Zap, highlight: true },
+            { id: 'ai-keys', label: isRtl ? '🤖 إعدادات المساعد الذكي' : '🤖 AI Assistant Configuration', icon: Bot, highlight: true },
             { id: 'preferences', label: isRtl ? '🎨 تصميم ومظهر المنصة الشامل' : '🎨 Platform Design & Theme', icon: Settings },
             { id: 'staff', label: isRtl ? '👥 إدارة المشرفين وخدمة العملاء' : '👥 Staff & Support Team', icon: Users, count: staffList.length },
             { id: 'user-roles', label: isRtl ? '🛡️ أدوار وصلاحيات المستخدمين' : '🛡️ User Roles & Permissions', icon: ShieldCheck, count: Object.keys(userRolesMap).length },
@@ -1483,6 +1504,74 @@ export default function AdminDashboard({
             );
           })}
         </div>
+
+        {/* SECTION: AI ASSISTANT CONFIGURATION */}
+        {activeSection === 'ai-keys' && (
+          <div className="space-y-6 animate-fadeIn">
+            <div className="rounded-3xl border border-blue-500/30 bg-gradient-to-r from-blue-950 via-slate-900 to-indigo-950 p-6 md:p-8 shadow-2xl space-y-3">
+              <h2 className="text-2xl font-extrabold text-white">{isRtl ? 'إعدادات المساعد الذكي (AI Assistant)' : 'AI Assistant Configuration'}</h2>
+              <p className="text-sm text-slate-300">{isRtl ? 'تحكم في تفعيل المساعد الذكي وإدارة مفاتيح Gemini' : 'Control AI Assistant visibility and manage Gemini API keys.'}</p>
+            </div>
+            
+            <div className="rounded-3xl border border-slate-800 bg-slate-900 p-6 space-y-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h4 className="text-sm font-bold text-white">{isRtl ? 'تفعيل شات المساعد الذكي' : 'Enable AI Chat Widget'}</h4>
+                  <p className="text-xs text-slate-400">{isRtl ? 'يظهر للعملاء في الزاوية' : 'Visible to clients in the corner'}</p>
+                </div>
+                <button
+                  onClick={() => setIsAiChatEnabled(!isAiChatEnabled)}
+                  className={`w-12 h-6 rounded-full transition ${isAiChatEnabled ? 'bg-blue-600' : 'bg-slate-700'}`}
+                >
+                  <div className={`w-4 h-4 rounded-full bg-white transition transform ${isAiChatEnabled ? 'translate-x-7' : 'translate-x-1'}`} />
+                </button>
+              </div>
+
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <label className="text-xs font-bold text-slate-300">{isRtl ? 'رسالة الترحيب (عربي)' : 'Welcome Message (AR)'}</label>
+                  <textarea
+                    value={settings.aiWelcomeMessageAr || ''}
+                    onChange={(e) => setSettings({...settings, aiWelcomeMessageAr: e.target.value})}
+                    className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3.5 py-2.5 text-xs text-white"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-xs font-bold text-slate-300">{isRtl ? 'رسالة الترحيب (إنجليزي)' : 'Welcome Message (EN)'}</label>
+                  <textarea
+                    value={settings.aiWelcomeMessageEn || ''}
+                    onChange={(e) => setSettings({...settings, aiWelcomeMessageEn: e.target.value})}
+                    className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3.5 py-2.5 text-xs text-white"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-xs font-bold text-slate-300">{isRtl ? 'رسالة الرد التلقائي عند الخطأ (عربي)' : 'Fallback Reply (AR)'}</label>
+                  <textarea
+                    value={settings.aiFallbackReplyAr || ''}
+                    onChange={(e) => setSettings({...settings, aiFallbackReplyAr: e.target.value})}
+                    className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3.5 py-2.5 text-xs text-white"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-xs font-bold text-slate-300">{isRtl ? 'رسالة الرد التلقائي عند الخطأ (إنجليزي)' : 'Fallback Reply (EN)'}</label>
+                  <textarea
+                    value={settings.aiFallbackReplyEn || ''}
+                    onChange={(e) => setSettings({...settings, aiFallbackReplyEn: e.target.value})}
+                    className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3.5 py-2.5 text-xs text-white"
+                  />
+                </div>
+              </div>
+
+              <button
+                onClick={saveAiSettings}
+                disabled={isAiKeysLoading}
+                className="w-full rounded-xl bg-blue-600 py-3 text-sm font-bold text-white transition hover:bg-blue-500 disabled:opacity-50"
+              >
+                {isAiKeysLoading ? (isRtl ? 'جاري الحفظ...' : 'Saving...') : (isRtl ? 'حفظ الإعدادات' : 'Save Settings')}
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* SECTION: STAFF & CUSTOMER SERVICE MANAGEMENT */}
         {activeSection === 'staff' && (

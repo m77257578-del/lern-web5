@@ -977,6 +977,33 @@ async function startServer() {
     }
   });
 
+  app.post('/api/admin/ai-settings', async (req, res) => {
+    try {
+      const { 
+        isAiChatEnabled, 
+        customGeminiKeyInput,
+        aiWelcomeMessageAr,
+        aiWelcomeMessageEn,
+        aiFallbackReplyAr,
+        aiFallbackReplyEn 
+      } = req.body;
+      if (!db.settings) db.settings = {};
+      db.settings.isAiChatEnabled = isAiChatEnabled;
+      db.settings.aiWelcomeMessageAr = aiWelcomeMessageAr;
+      db.settings.aiWelcomeMessageEn = aiWelcomeMessageEn;
+      db.settings.aiFallbackReplyAr = aiFallbackReplyAr;
+      db.settings.aiFallbackReplyEn = aiFallbackReplyEn;
+
+      if (customGeminiKeyInput) {
+        db.settings.geminiKeyPool = [customGeminiKeyInput, ...(db.settings.geminiKeyPool || [])];
+      }
+      saveDb(db);
+      res.json({ success: true });
+    } catch (e) {
+      res.status(500).json({ error: 'Failed to save settings' });
+    }
+  });
+
   // Notifications API
   app.get('/api/notifications', async (req, res) => {
     try {
@@ -1471,7 +1498,7 @@ ${clientAiContext ? `\n[CLIENT LIVE UI CONTEXT]\n${clientAiContext}\n` : ''}
 
   // Robust Multi-Model AI Generator with Smart Synthesis Fallback for 429 Quota Limits
   async function generateAiContentWithRetry(params: any, maxRotationAttempts = 3) {
-    const candidateModels = ['gemini-3.8-flash', 'gemini-3.1-flash-lite'];
+    const candidateModels = ['gemini-3.8-flash'];
     let lastError: any = null;
 
     const timeoutMs = 25000;
@@ -1606,7 +1633,7 @@ ${clientAiContext ? `\n[CLIENT LIVE UI CONTEXT]\n${clientAiContext}\n` : ''}
       openAiApiKey 
     } = req.body || {};
 
-    const chosenGeminiModel = model && ['gemini-3.8-flash', 'gemini-3.1-flash-lite'].includes(model) 
+    const chosenGeminiModel = model && ['gemini-3.8-flash'].includes(model) 
       ? model 
       : 'gemini-3.8-flash';
 
@@ -1709,7 +1736,7 @@ ${comprehensiveKnowledge}
         parts: currentParts
       });
 
-      const chosenGeminiModel = model && ['gemini-3.8-flash', 'gemini-3.1-flash-lite'].includes(model) 
+      const chosenGeminiModel = model && ['gemini-3.8-flash'].includes(model) 
         ? model 
         : 'gemini-3.8-flash';
 
