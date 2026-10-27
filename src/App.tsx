@@ -1255,7 +1255,7 @@ export default function App() {
         <button
           onClick={() => setIsAiChatOpen(!isAiChatOpen)}
           className="rounded-full bg-gradient-to-r from-blue-600 to-indigo-600 p-4 text-white shadow-2xl hover:scale-105 transition cursor-pointer"
-          title={isRtl ? 'مراسلة الإدارة والدعم الفني المباشر' : 'Contact Administration & Support'}
+          title={isRtl ? 'المساعد الذكي والدعم الآلي المباشر (24/7)' : 'AI Assistant & Automated Support'}
         >
           {isAiChatOpen ? <X className="w-8 h-8" /> : <MessageSquare className="w-8 h-8" />}
         </button>

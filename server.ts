@@ -1652,53 +1652,7 @@ ${comprehensiveKnowledge}
 3. إذا أرسل ملفاً أو صورة، رحب به وقدم تحليلاً شاملاً للنص أو المحتوى أو المسألة الموجودة في المرفق.
 `;
 
-      // Branch: ChatGPT (OpenAI) Engine
-      if (provider === 'chatgpt' || (model && model.startsWith('gpt-'))) {
-        const activeOpenAiKey = openAiApiKey || db.settings?.openAiApiKey || process.env.OPENAI_API_KEY;
-        
-        if (!activeOpenAiKey) {
-          return res.json({
-            text: `🤖 **وضع ChatGPT (OpenAI) متاح!**\n\nلاستخدام نماذج ChatGPT (مثل GPT-4o و GPT-4o-mini)، يرجى إدخال مفتاح **OpenAI API Key** الخاص بك في إعدادات المحادثة أو إعدادات لوحة التحكم.\n\n💡 *ملاحظة:* محرك **Gemini** يعمل حالياً بكامل طاقته ومزود بمجمع يتجاوز **20 مفتاح مجاني نشط** مع تدوير تلقائي ودعم كامل لقراءة الصور والملفات دون أي إعداد! يمكنك التبديل إليه بضغطة زر.`,
-            provider: 'chatgpt',
-            needsKey: true
-          });
-        }
-
-        // Construct OpenAI message thread
-        const openAiMessages: any[] = [
-          { role: 'system', content: effectiveSystemInstruction }
-        ];
-
-        if (history && Array.isArray(history)) {
-          history.slice(-10).forEach((m: any) => {
-            if (m.text && m.sender) {
-              openAiMessages.push({
-                role: m.sender === 'user' ? 'user' : 'assistant',
-                content: m.text
-              });
-            }
-          });
-        }
-
-        openAiMessages.push({
-          role: 'user',
-          content: message || 'يرجى مراجعة وفحص المرفقات المرفقة وتحليلها.'
-        });
-
-        const reply = await callOpenAiChat({
-          messages: openAiMessages,
-          apiKey: activeOpenAiKey,
-          model: model || 'gpt-4o-mini',
-          attachments: attachments || []
-        });
-
-        return res.json({
-          text: reply,
-          provider: 'chatgpt',
-          model: model || 'gpt-4o-mini',
-          keysStatus: keyPool.getStatus()
-        });
-      }
+      // Exclusively use Gemini Multimodal Engine with 25+ Key Pool Auto-Rotation
 
       // Branch: Gemini Multimodal Engine with 20+ Key Pool Auto-Rotation
       const contents: any[] = [];

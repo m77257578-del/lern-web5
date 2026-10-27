@@ -52,9 +52,9 @@ export default function AiSupportChat({ lang = 'ar', currentUser }: AiSupportCha
   const [stagedAttachments, setStagedAttachments] = useState<SupportTicketAttachment[]>([]);
   const [previewImageModal, setPreviewImageModal] = useState<string | null>(null);
 
-  // AI Provider & Model Selection
-  const [selectedProvider, setSelectedProvider] = useState<'gemini' | 'chatgpt'>('gemini');
-  const [selectedModel, setSelectedModel] = useState<string>('gemini-3.8-flash');
+  // AI Provider & Model Selection (Exclusively Gemini Engine)
+  const [selectedProvider] = useState<'gemini'>('gemini');
+  const [selectedModel] = useState<string>('gemini-3.8-flash');
 
   // Key Pool Metrics State
   const [keyPoolStatus, setKeyPoolStatus] = useState<{
@@ -515,18 +515,18 @@ export default function AiSupportChat({ lang = 'ar', currentUser }: AiSupportCha
         userEmail,
         { 
           sender: 'ai', 
-          senderName: isRtl ? 'إدارة منصة ليرن ويب والدعم الفني' : 'Lern Web Admin & Support', 
+          senderName: isRtl ? 'المساعد الذكي لمنصة ليرن ويب' : 'Lern Web AI Assistant', 
           text: aiReplyResult.text,
-          provider: (aiReplyResult.provider as any) || selectedProvider,
-          model: aiReplyResult.model || selectedModel
+          provider: 'gemini',
+          model: 'gemini-3.8-flash'
         }
       );
       setTicket(updatedTicket);
     } catch (err: any) {
-      console.warn('AI chat remote fallback activated:', err);
+      console.warn('AI chat fallback activated:', err);
       const fallbackReply = isRtl
-        ? `⚠️ تم استلام رسالتك وتسجيلها في تذاكر الإدارة.\n\nفريق الدعم الفني وإدارة ليرن ويب يتابعون رسالتك لحظياً، ويمكنك التواصل المباشر مع مهندسينا عبر واتساب: 201024889921.`
-        : `⚠️ Message received and logged into admin tickets.\n\nLern Web engineering team is monitoring your query live. You can reach out directly via WhatsApp: 201024889921.`;
+        ? `أهلاً بك يا ${userName}! أنا المساعد الذكي لشركة ليرن ويب. يمكنك الاستفسار عن باقات الاشتراك، أسعار التملك، أرقام المحافظ، أو تجربة المحاكي وسأجيبك فوراً.`
+        : `Welcome ${userName}! I am the Lern Web AI Assistant. Ask me about plans, pricing, wallets, or the sandbox simulator!`;
 
       const updatedTicket = storageService.addMessageToTicket(
         userId,
@@ -535,10 +535,10 @@ export default function AiSupportChat({ lang = 'ar', currentUser }: AiSupportCha
         userEmail,
         { 
           sender: 'ai', 
-          senderName: isRtl ? 'إدارة منصة ليرن ويب والدعم الفني' : 'Lern Web Admin & Support', 
+          senderName: isRtl ? 'المساعد الذكي لمنصة ليرن ويب' : 'Lern Web AI Assistant', 
           text: fallbackReply,
-          provider: selectedProvider,
-          model: selectedModel
+          provider: 'gemini',
+          model: 'gemini-3.8-flash'
         }
       );
       setTicket(updatedTicket);
@@ -552,10 +552,10 @@ export default function AiSupportChat({ lang = 'ar', currentUser }: AiSupportCha
     {
       id: 'welcome-msg',
       sender: 'ai',
-      senderName: isRtl ? 'فريق إدارة ليرن ويب والدعم الفني' : 'Lern Web Management & Support',
+      senderName: isRtl ? 'المساعد الذكي لمنصة ليرن ويب' : 'Lern Web AI Assistant',
       text: isRtl 
-        ? `مرحباً بك يا ${userName}! يمكنك كتابة استفساراتك، أفكارك، أو طلباتك مباشرة هنا، وسيقوم فريق إدارة منصة ليرن ويب والدعم الفني بالمتابعة والرد عليك فوراً في هذه المحادثة.`
-        : `Welcome ${userName}! Send your inquiries or requests directly here, and the Lern Web management and technical support team will reply to you immediately.`,
+        ? `مرحباً بك يا ${userName}! أنا المساعد الذكي الرسمي لمنصة ليرن ويب (Lern Web AI). أنا مطلع لحظياً على كافة المنظومات، باقات التراخيص، أرقام المحافظ، وإعدادات المحاكي. اكتب سؤالك، أو ألصق صورة/ملف وسأجيبك فوراً!`
+        : `Welcome ${userName}! I am the official Lern Web AI Assistant. Ask me about certified systems, pricing, payment wallets, or sandbox simulator, and I will answer instantly!`,
       timestamp: new Date().toISOString(),
       provider: 'gemini'
     }
@@ -567,19 +567,19 @@ export default function AiSupportChat({ lang = 'ar', currentUser }: AiSupportCha
       <div className="bg-gradient-to-r from-slate-900 via-slate-800 to-indigo-950 p-3.5 border-b border-slate-700/80 flex items-center justify-between shadow-md">
         <div className="flex items-center gap-2.5">
           <div className="bg-gradient-to-tr from-blue-600 to-indigo-600 p-2 rounded-xl text-white shadow-md shadow-blue-600/30">
-            <ShieldCheck className="w-4 h-4 text-white" />
+            <Sparkles className="w-4 h-4 text-amber-300 animate-pulse" />
           </div>
           <div>
             <div className="flex items-center gap-2 flex-wrap">
               <h3 className="text-xs sm:text-sm font-bold text-white flex items-center gap-1.5">
-                <span>{isRtl ? 'مراسلة الإدارة والدعم الفني المباشر' : 'Direct Support & Administration'}</span>
+                <span>{isRtl ? 'المساعد الذكي والدعم الآلي المباشر' : 'AI Assistant & Automated Support'}</span>
               </h3>
             </div>
 
             <div className="flex items-center gap-1.5 mt-0.5">
               <span className="flex h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
               <span className="text-[10px] text-slate-300 font-semibold">
-                {isRtl ? 'إدارة ليرن ويب • متصل الآن لخدمتك' : 'Lern Web Admin • Online'}
+                {isRtl ? 'المساعد الذكي متصل • إجابات فورية 24/7' : 'AI Assistant Online • Instant 24/7 Replies'}
               </span>
             </div>
           </div>
@@ -682,8 +682,8 @@ export default function AiSupportChat({ lang = 'ar', currentUser }: AiSupportCha
                       <span>{userName}</span>
                     ) : (
                       <>
-                        <ShieldCheck className="w-3 h-3 text-amber-400" />
-                        <span className="text-amber-300">{isRtl ? 'إدارة منصة ليرن ويب والدعم الفني' : 'Lern Web Admin & Support'}</span>
+                        <Sparkles className="w-3 h-3 text-amber-400" />
+                        <span className="text-amber-300">{isRtl ? 'المساعد الذكي (Gemini AI)' : 'Lern Web AI Assistant'}</span>
                       </>
                     )}
                   </span>
@@ -737,12 +737,12 @@ export default function AiSupportChat({ lang = 'ar', currentUser }: AiSupportCha
         {isThinking && (
           <div className="flex items-end gap-2">
             <div className="w-7 h-7 rounded-xl bg-slate-800 border border-slate-700 flex items-center justify-center">
-              <ShieldCheck className="w-3.5 h-3.5 text-blue-400 animate-pulse" />
+              <Bot className="w-3.5 h-3.5 text-blue-400 animate-spin" />
             </div>
             <div className="bg-slate-800/90 border border-slate-700 px-4 py-2.5 rounded-2xl rounded-bl-none text-xs text-slate-300 flex items-center gap-2">
               <span className="w-2 h-2 rounded-full bg-blue-400 animate-ping" />
               <span>
-                {isRtl ? 'جاري تحويل الرسالة وتسجيلها في نظام تذاكر الإدارة...' : 'Transmitting message to admin ticket system...'}
+                {isRtl ? 'جاري تحليل استفسارك وإعداد الرد الذكي الفوري عبر Gemini (25+ مفتاح)...' : 'Analyzing query & generating AI response via Gemini 25+ Key Pool...'}
               </span>
             </div>
           </div>
@@ -870,11 +870,7 @@ export default function AiSupportChat({ lang = 'ar', currentUser }: AiSupportCha
           <button
             type="submit"
             disabled={(!inputQuery.trim() && stagedAttachments.length === 0) || isThinking}
-            className={`p-2.5 rounded-2xl transition active:scale-95 shrink-0 shadow-lg flex items-center justify-center cursor-pointer ${
-              selectedProvider === 'chatgpt'
-                ? 'bg-emerald-600 hover:bg-emerald-500 shadow-emerald-600/30 text-white disabled:opacity-40'
-                : 'bg-blue-600 hover:bg-blue-500 shadow-blue-600/30 text-white disabled:opacity-40'
-            }`}
+            className="p-2.5 rounded-2xl transition active:scale-95 shrink-0 shadow-lg flex items-center justify-center cursor-pointer bg-blue-600 hover:bg-blue-500 shadow-blue-600/30 text-white disabled:opacity-40"
           >
             <Send className="w-4 h-4" />
           </button>
@@ -883,7 +879,7 @@ export default function AiSupportChat({ lang = 'ar', currentUser }: AiSupportCha
         <div className="flex items-center justify-between text-[9px] text-slate-500 mt-2 px-1">
           <span>{isRtl ? '💡 يمكنك إرفاق مستندات أو لصق صور مباشرة (Ctrl+V)' : '💡 Paste screenshots directly'}</span>
           <span className="font-mono text-emerald-400">
-            {isRtl ? 'فريق الدعم والإدارة متصل' : 'Admin Support Online'}
+            {isRtl ? 'المساعد الذكي متصل • Gemini AI' : 'AI Assistant Online • Gemini AI'}
           </span>
         </div>
       </div>

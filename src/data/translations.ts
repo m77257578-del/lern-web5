@@ -122,7 +122,7 @@ export const translations: { ar: TranslationDict; en: TranslationDict } = {
     navSandbox: "محاكي الساندبوكس الحي",
     navMediaDocs: "قنوات الفيديو والشروحات",
     navBilling: "خطط التراخيص والتملك",
-    navAiStudio: "مراسلة الإدارة والدعم الفني المباشر",
+    navAiStudio: "المساعد الذكي لمنصة ليرن ويب",
     navCodeViewer: "أكواد Next.js لـ VS Code",
     themeToggle: "تبديل المظهر",
     langToggle: "English",
