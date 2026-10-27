@@ -10,7 +10,7 @@ import {
   Layers, Play, Video, ShieldCheck, Sun, Moon, 
   Globe, Download, Smartphone, Code2, ArrowUpRight,
   CheckCircle2, Menu, X, Share2, Terminal, Copy, Check, Lock, User, Sparkles, Printer, BarChart3, Rocket, Clock, Bot, LogOut, LayoutDashboard, FileText, HelpCircle,
-  Crown, Sliders, Bell, ArrowDown, ChevronUp, Radio, Compass, MessageSquare, Zap, ExternalLink, Activity, ArrowRight, Star, CreditCard, ChevronRight, Cpu
+  Crown, Sliders, Bell, ArrowDown, ChevronUp, Radio, Compass, MessageSquare, Zap, ExternalLink, Activity, ArrowRight, Star, CreditCard, ChevronRight, ChevronLeft, Cpu
 } from 'lucide-react';
 
 import AppStore from '../components/AppStore';
@@ -24,8 +24,7 @@ import SecretLoginModal from '../components/SecretLoginModal';
 import PlatformRating from './components/PlatformRating';
 import { WelcomeModal } from './components/WelcomeModal';
 import { SocialMediaBar } from './components/SocialMediaIcons';
-import NotificationCenterRaw from '../components/NotificationCenter';
-const NotificationCenter = NotificationCenterRaw as any;
+import ClientNotificationsSection from '../components/ClientNotificationsSection';
 import AiSupportChat from './components/AiSupportChat';
 import ClientSpendingChart from './components/ClientSpendingChart';
 import { PublishedProjectsSection } from './components/PublishedProjectsSection';
@@ -34,6 +33,8 @@ import PaymentWalletsSection from './components/PaymentWalletsSection';
 import GlobalSkeletonLoader from '../components/GlobalSkeletonLoader';
 import Three3DLoaderPortal from './components/Three3DLoaderPortal';
 import SectionMediaShowcase from './components/SectionMediaShowcase';
+import HomeSection from './components/HomeSection';
+import SupportHelpCenter from '../components/SupportHelpCenter';
 import { toast } from 'sonner';
 import { translations } from './data/translations';
 import { APPS_DATA, WALLET_OPTIONS, MEDIA_RESOURCES, AppItem } from './data/storeData';
@@ -109,7 +110,7 @@ export default function App() {
 
   const [theme, setTheme] = useState<'dark' | 'light'>('dark');
   const [viewMode] = useState<'tabs'>('tabs');
-  const [activeTab, setActiveTab] = useState<'store' | 'sandbox' | 'articles' | 'pricing' | 'faq' | 'rating' | 'media' | 'billing' | 'vscode' | 'client-dashboard' | 'about' | 'cms-dashboard' | 'wallets' | 'published-projects'>('store');
+  const [activeTab, setActiveTab] = useState<'hero' | 'store' | 'sandbox' | 'articles' | 'pricing' | 'faq' | 'rating' | 'media' | 'billing' | 'vscode' | 'client-dashboard' | 'about' | 'cms-dashboard' | 'wallets' | 'published-projects'>('hero');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [sandboxConfig, setSandboxConfig] = useState<any>(null);
   const [isAnnouncementDismissed, setIsAnnouncementDismissed] = useState<boolean>(false);
@@ -256,6 +257,22 @@ export default function App() {
       unsubscribeStorage();
     };
   }, []);
+
+  useEffect(() => {
+    if (isMobileMenuOpen) {
+      document.body.style.overflow = 'hidden';
+      const handleEscape = (e: KeyboardEvent) => {
+        if (e.key === 'Escape') setIsMobileMenuOpen(false);
+      };
+      window.addEventListener('keydown', handleEscape);
+      return () => {
+        document.body.style.overflow = '';
+        window.removeEventListener('keydown', handleEscape);
+      };
+    } else {
+      document.body.style.overflow = '';
+    }
+  }, [isMobileMenuOpen]);
 
   const scrollToSection = (id: string) => {
     setActiveTab(id as any);
@@ -545,16 +562,17 @@ export default function App() {
             </div>
           </div>
 
-          {/* Desktop Navigation Links */}
-          <nav className="hidden xl:flex items-center gap-1 rounded-2xl border border-slate-800 bg-slate-900/60 p-1.5">
+          {/* Desktop Navigation Links (Laptop & Desktop) */}
+          <nav className="hidden lg:flex items-center gap-1 rounded-2xl border border-slate-800 bg-slate-900/60 p-1.5 overflow-x-auto">
             {[
               { id: 'hero', label: isRtl ? 'الرئيسية' : 'Home', icon: Compass },
               { id: 'store', label: isRtl ? 'سوق المنظومات' : 'App Store', icon: Layers },
+              { id: 'published-projects', label: isRtl ? 'مشروعات منشورة' : 'Projects', icon: Globe },
+              { id: 'rating', label: isRtl ? 'تقييم المنصة' : 'Rate Platform', icon: Star },
               { id: 'articles', label: isRtl ? 'المقالات والـ CMS' : 'CMS & Articles', icon: FileText },
               { id: 'wallets', label: isRtl ? 'طرق الدفع' : 'Payment Methods', icon: CreditCard },
               { id: 'faq', label: isRtl ? 'الأسئلة الشائعة' : 'FAQ', icon: HelpCircle },
-              { id: 'about', label: isRtl ? 'من نحن' : 'About Us', icon: Sparkles },
-              ...(isUserLoggedIn ? [{ id: 'client-portal', label: isRtl ? 'لوحة العميل' : 'My Account', icon: User }] : [])
+              { id: 'about', label: isRtl ? 'من نحن' : 'About Us', icon: Sparkles }
             ].map((nav) => {
               const Icon = nav.icon;
               const isActive = activeTab === nav.id;
@@ -562,9 +580,9 @@ export default function App() {
                 <button
                   key={nav.id}
                   onClick={() => scrollToSection(nav.id)}
-                  className={`flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-semibold transition-all cursor-pointer ${
+                  className={`flex items-center gap-1.5 rounded-xl px-2.5 py-1.5 text-xs font-semibold transition-all cursor-pointer whitespace-nowrap shrink-0 ${
                     isActive 
-                      ? 'bg-blue-600 text-white shadow-md shadow-blue-600/25' 
+                      ? 'bg-blue-600 text-white shadow-md shadow-blue-600/25 font-bold' 
                       : 'text-slate-400 hover:text-slate-100 hover:bg-slate-800/60'
                   }`}
                 >
@@ -622,11 +640,18 @@ export default function App() {
               <div className="flex items-center gap-1.5">
                 <button
                   type="button"
-                  onClick={() => scrollToSection('client-portal')}
-                  className="flex items-center gap-2 rounded-xl border border-blue-500/50 bg-gradient-to-r from-blue-600 to-indigo-600 px-3 py-2 text-xs md:text-sm font-bold text-white hover:from-blue-500 hover:to-indigo-500 shadow-blue-600/30 transition active:scale-95 cursor-pointer"
+                  onClick={() => scrollToSection('client-dashboard')}
+                  className="flex items-center gap-2 rounded-xl border border-blue-500/50 bg-gradient-to-r from-blue-600 to-indigo-600 px-3.5 py-2 text-xs md:text-sm font-bold text-white hover:from-blue-500 hover:to-indigo-500 shadow-blue-600/30 transition active:scale-95 cursor-pointer"
+                  title={isRtl ? 'فتح لوحة العميل وحسابي' : 'Open Client Dashboard'}
                 >
-                  <User className="w-3.5 h-3.5" />
-                  <span className="max-w-[100px] truncate">{currentUser?.name || (isRtl ? 'لوحة العميل' : 'Account')}</span>
+                  {currentUser?.avatarUrl ? (
+                    <img src={currentUser.avatarUrl} alt="Avatar" className="w-5 h-5 rounded-full object-cover border border-white/40" />
+                  ) : (
+                    <div className="w-5 h-5 rounded-full bg-white/20 flex items-center justify-center text-[10px] font-bold text-white">
+                      {(currentUser?.name || 'U').charAt(0).toUpperCase()}
+                    </div>
+                  )}
+                  <span className="max-w-[110px] truncate">{currentUser?.name || (isRtl ? 'لوحة العميل' : 'My Account')}</span>
                 </button>
                 <button
                   type="button"
@@ -651,92 +676,275 @@ export default function App() {
             {/* Mobile Menu Trigger */}
             <button
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              className="xl:hidden rounded-xl border border-slate-800 bg-slate-900 p-2 text-slate-300 hover:text-white"
+              className="lg:hidden rounded-xl border border-slate-800 bg-slate-900 p-2 text-slate-300 hover:text-white cursor-pointer active:scale-95"
               aria-label={isMobileMenuOpen ? 'Close Menu' : 'Open Menu'}
             >
-              {isMobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+              {isMobileMenuOpen ? <X className="w-5 h-5 text-rose-400" /> : <Menu className="w-5 h-5" />}
             </button>
           </div>
         </div>
+      </header>
 
-        {/* Mobile Navigation Dropdown */}
-        {isMobileMenuOpen && (
-          <div className="xl:hidden fixed inset-x-0 top-20 bottom-0 z-50 bg-slate-950/95 backdrop-blur-2xl border-t border-slate-800 p-6 space-y-6 overflow-y-auto animate-slideDown">
-            {/* Quick Actions at Top of Menu */}
-            <div className="grid grid-cols-2 gap-3">
-              <button
-                onClick={() => setLang(lang === 'ar' ? 'en' : 'ar')}
-                className="flex items-center justify-center gap-2 rounded-2xl border border-slate-700 bg-slate-900 p-4 text-sm font-bold text-white shadow-xl transition active:scale-95"
-              >
-                <Globe className="w-5 h-5 text-blue-400" />
-                <span>{lang === 'ar' ? 'English (EN)' : 'العربية (AR)'}</span>
-              </button>
-              <button
-                onClick={() => setTheme(effectiveTheme === 'dark' ? 'light' : 'dark')}
-                className="flex items-center justify-center gap-2 rounded-2xl border border-slate-700 bg-slate-900 p-4 text-sm font-bold text-white shadow-xl transition active:scale-95"
-              >
-                {effectiveTheme === 'dark' ? <Sun className="w-5 h-5 text-amber-400" /> : <Moon className="w-5 h-5 text-indigo-400" />}
-                <span>{isRtl ? 'المظهر' : 'Theme'}</span>
-              </button>
+      {/* Fullscreen Mobile Navigation Drawer - Rendered directly above all page content (z-[9999]) */}
+      {isMobileMenuOpen && (
+        <div 
+          className="lg:hidden fixed inset-0 z-[9999] bg-slate-950/98 text-slate-100 backdrop-blur-3xl flex flex-col animate-fadeIn select-none overflow-hidden"
+          role="dialog"
+          aria-modal="true"
+          aria-label={isRtl ? 'أقسام منصة ليرن ويب' : 'Lern Web Platform Sections'}
+        >
+          {/* Drawer Top Navigation Bar */}
+          <div className="flex items-center justify-between px-5 py-4 border-b border-slate-800/80 bg-slate-900/80 shrink-0">
+            <div className="flex items-center gap-3">
+              <div className="relative w-10 h-10 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 p-0.5 shadow-md overflow-hidden shrink-0">
+                <img 
+                  src="/assets/aistudio/image_69117c9b__1__7fdc7aea.jpg" 
+                  alt="Lern Web Logo" 
+                  className="w-full h-full object-cover rounded-[14px]"
+                />
+              </div>
+              <div className="text-right">
+                <span className="font-black text-base md:text-lg text-white block">
+                  {adminSettings?.centerName || 'ليرن ويب'}
+                </span>
+                <span className="text-[10px] text-blue-400 font-mono block">
+                  LERN WEB PLATFORM
+                </span>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setIsMobileMenuOpen(false)}
+              className="flex items-center gap-1.5 rounded-2xl border border-slate-700 bg-slate-800 px-4 py-2 text-sm font-bold text-white shadow-lg hover:bg-slate-700 transition active:scale-95 cursor-pointer"
+              aria-label={isRtl ? 'إغلاق القائمة' : 'Close Menu'}
+            >
+              <X className="w-5 h-5 text-rose-400" />
+              <span>{isRtl ? 'إغلاق' : 'Close'}</span>
+            </button>
+          </div>
+
+          {/* Quick Actions (Language & Theme) */}
+          <div className="px-5 py-3 border-b border-slate-800/60 bg-slate-900/40 grid grid-cols-2 gap-3 shrink-0">
+            <button
+              type="button"
+              onClick={() => setLang(lang === 'ar' ? 'en' : 'ar')}
+              className="flex items-center justify-center gap-2 rounded-xl border border-slate-800 bg-slate-900 py-2.5 text-xs font-bold text-white shadow transition active:scale-95 cursor-pointer"
+            >
+              <Globe className="w-4 h-4 text-blue-400" />
+              <span>{lang === 'ar' ? 'English (EN)' : 'العربية (AR)'}</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setTheme(effectiveTheme === 'dark' ? 'light' : 'dark')}
+              className="flex items-center justify-center gap-2 rounded-xl border border-slate-800 bg-slate-900 py-2.5 text-xs font-bold text-white shadow transition active:scale-95 cursor-pointer"
+            >
+              {effectiveTheme === 'dark' ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4 text-indigo-400" />}
+              <span>{effectiveTheme === 'dark' ? (isRtl ? 'المظهر الفاتح' : 'Light') : (isRtl ? 'المظهر الداكن' : 'Dark')}</span>
+            </button>
+          </div>
+
+          {/* Scrollable Navigation Sections List */}
+          <div className="flex-1 overflow-y-auto px-4 py-5 space-y-4">
+            <div className="px-1 text-right">
+              <span className="text-[11px] font-black text-blue-400 uppercase tracking-widest block">
+                {isRtl ? 'أقسام المنظومة التعليمية' : 'Platform Sections'}
+              </span>
+              <p className="text-xs text-slate-400 mt-0.5">
+                {isRtl ? 'اضغط على أي قسم للانتقال إليه مباشرة' : 'Tap any section to navigate immediately'}
+              </p>
             </div>
 
             <div className="space-y-2">
-              <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest px-4">{isRtl ? 'تصفح المنصة' : 'Explore Platform'}</span>
-              <div className="space-y-1">
-                {[
-                  { id: 'hero', label: isRtl ? 'الرئيسية' : 'Home', icon: Compass },
-                  { id: 'store', label: isRtl ? 'سوق المنظومات' : 'App Store', icon: Layers },
-                  { id: 'articles', label: isRtl ? 'المقالات والـ CMS' : 'CMS & Articles', icon: FileText },
-                  { id: 'wallets', label: isRtl ? 'طرق الدفع' : 'Payment Methods', icon: CreditCard },
-                  { id: 'published-projects', label: isRtl ? 'مشروعات منشورة' : 'Published Projects', icon: Globe },
-                  { id: 'faq', label: isRtl ? 'الأسئلة الشائعة' : 'FAQ', icon: HelpCircle },
-                  { id: 'rating', label: isRtl ? 'تقييم المنصة' : 'Rate Platform', icon: Star },
-                  { id: 'about', label: isRtl ? 'من نحن' : 'About Us', icon: Sparkles },
-                  ...(isUserLoggedIn ? [{ id: 'client-portal', label: isRtl ? 'لوحة العميل' : 'My Account', icon: User }] : []),
-                  { id: 'cms-dashboard', label: isRtl ? '👑 لوحة التحكم والـ CMS' : '👑 CMS & Admin Panel', icon: Crown, highlight: true }
-                ].map((nav) => {
-                  const Icon = nav.icon;
-                  const isCurrent = activeTab === nav.id;
-                  return (
-                    <button
-                      key={nav.id}
-                      onClick={() => {
-                        scrollToSection(nav.id);
-                        setIsMobileMenuOpen(false);
-                      }}
-                      className={`w-full flex items-center gap-4 rounded-2xl px-5 py-4 text-base font-bold transition-all ${
-                        nav.highlight 
-                          ? 'bg-gradient-to-r from-amber-600/20 to-amber-900/20 border border-amber-500/30 text-amber-300' 
-                          : (isCurrent ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20' : 'text-slate-300 hover:bg-slate-900 border border-transparent')
-                      }`}
-                    >
-                      <Icon className={`w-5 h-5 ${isCurrent ? 'text-white' : 'text-blue-400'}`} />
-                      <span>{nav.label}</span>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
+              {[
+                { 
+                  id: 'hero', 
+                  labelAr: 'الرئيسية', 
+                  labelEn: 'Home', 
+                  descAr: 'واجهة البداية وأبرز مميزات المنظومة', 
+                  descEn: 'Platform overview and highlights',
+                  icon: Compass,
+                  color: 'text-blue-400 bg-blue-500/10 border-blue-500/20'
+                },
+                { 
+                  id: 'store', 
+                  labelAr: 'سوق المنظومات والأدوات', 
+                  labelEn: 'App Store', 
+                  descAr: 'تصفح كافة التطبيقات والمنصات الجاهزة', 
+                  descEn: 'Explore all certified systems and tools',
+                  icon: Layers,
+                  color: 'text-indigo-400 bg-indigo-500/10 border-indigo-500/20'
+                },
+                { 
+                  id: 'articles', 
+                  labelAr: 'المقالات والـ CMS', 
+                  labelEn: 'CMS & Articles', 
+                  descAr: 'أدلة التشغيل ومقالات التحول الرقمي', 
+                  descEn: 'Knowledgebase and digital transformation guides',
+                  icon: FileText,
+                  color: 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20'
+                },
+                { 
+                  id: 'wallets', 
+                  labelAr: 'طرق الدفع والاشتراك', 
+                  labelEn: 'Payment Methods', 
+                  descAr: 'فودافون كاش، انستاباي، والتحويلات', 
+                  descEn: 'Vodafone Cash, InstaPay, and direct transfers',
+                  icon: CreditCard,
+                  color: 'text-amber-400 bg-amber-500/10 border-amber-500/20'
+                },
+                { 
+                  id: 'published-projects', 
+                  labelAr: 'مشروعات منشورة', 
+                  labelEn: 'Published Projects', 
+                  descAr: 'استعراض المنصات والمراكز الحية', 
+                  descEn: 'Live client academies and deployments',
+                  icon: Globe,
+                  color: 'text-sky-400 bg-sky-500/10 border-sky-500/20'
+                },
+                { 
+                  id: 'faq', 
+                  labelAr: 'الأسئلة الشائعة', 
+                  labelEn: 'FAQ', 
+                  descAr: 'إجابات فورية وشاملة لكل استفساراتك', 
+                  descEn: 'Instant answers to all common questions',
+                  icon: HelpCircle,
+                  color: 'text-purple-400 bg-purple-500/10 border-purple-500/20'
+                },
+                { 
+                  id: 'rating', 
+                  labelAr: 'تقييم المنصة', 
+                  labelEn: 'Rate Platform', 
+                  descAr: 'آراء ومراجعات المراكز والمدربين', 
+                  descEn: 'Client ratings and feedback',
+                  icon: Star,
+                  color: 'text-yellow-400 bg-yellow-500/10 border-yellow-500/20'
+                },
+                { 
+                  id: 'about', 
+                  labelAr: 'من نحن', 
+                  labelEn: 'About Us', 
+                  descAr: 'رؤية ليرن ويب ومنظومة العمل', 
+                  descEn: 'Learn more about our team and mission',
+                  icon: Sparkles,
+                  color: 'text-pink-400 bg-pink-500/10 border-pink-500/20'
+                },
+                ...(isAdmin ? [{
+                  id: 'cms-dashboard',
+                  labelAr: '👑 لوحة تحكم المشرف والـ CMS',
+                  labelEn: '👑 Admin & CMS Panel',
+                  descAr: 'إدارة المحتوى والمشاريع وتعديل الإعدادات',
+                  descEn: 'Full CMS authority and platform settings',
+                  icon: Crown,
+                  color: 'text-amber-300 bg-amber-500/20 border-amber-500/40',
+                  highlight: true
+                }] : [])
+              ].map((nav) => {
+                const Icon = nav.icon;
+                const isCurrent = activeTab === nav.id;
+                return (
+                  <button
+                    key={nav.id}
+                    type="button"
+                    onClick={() => {
+                      scrollToSection(nav.id);
+                      setIsMobileMenuOpen(false);
+                    }}
+                    className={`w-full flex items-center justify-between p-4 rounded-2xl border transition-all cursor-pointer ${
+                      nav.highlight 
+                        ? 'bg-gradient-to-r from-amber-600/20 to-amber-950/40 border-amber-500/40 text-amber-200 shadow-lg' 
+                        : isCurrent 
+                          ? 'bg-blue-600 border-blue-500 text-white shadow-xl shadow-blue-600/30' 
+                          : 'bg-slate-900/80 border-slate-800 text-slate-200 hover:bg-slate-800 hover:border-slate-700'
+                    }`}
+                  >
+                    <div className="flex items-center gap-3.5 text-right">
+                      <div className={`p-2.5 rounded-xl border ${isCurrent ? 'bg-white/20 border-white/30 text-white' : nav.color}`}>
+                        <Icon className="w-5 h-5" />
+                      </div>
+                      <div>
+                        <span className="font-bold text-sm md:text-base block">
+                          {isRtl ? nav.labelAr : nav.labelEn}
+                        </span>
+                        <span className={`text-xs block mt-0.5 ${isCurrent ? 'text-blue-100' : 'text-slate-400'}`}>
+                          {isRtl ? nav.descAr : nav.descEn}
+                        </span>
+                      </div>
+                    </div>
 
-            {/* Account Actions in Menu */}
-            {!isUserLoggedIn && (
-              <div className="pt-4 border-t border-slate-800">
-                <button
-                  onClick={() => { setIsClientLoginOpen(true); setIsMobileMenuOpen(false); }}
-                  className="w-full flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 p-4 text-base font-black text-white shadow-xl shadow-blue-600/20 transition active:scale-95"
-                >
-                  <User className="w-5 h-5" />
-                  <span>{isRtl ? 'دخول العميل' : 'Client Login'}</span>
-                </button>
-              </div>
+                    <div className={isCurrent ? 'text-white' : 'text-slate-500'}>
+                      {isRtl ? <ChevronLeft className="w-5 h-5" /> : <ChevronRight className="w-5 h-5" />}
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Footer of Mobile Drawer */}
+          <div className="px-5 py-4 border-t border-slate-800/80 bg-slate-900/80 space-y-3 shrink-0">
+            {isUserLoggedIn ? (
+              <button
+                type="button"
+                onClick={() => {
+                  handleClientLogout();
+                  setIsMobileMenuOpen(false);
+                }}
+                className="w-full flex items-center justify-center gap-2 rounded-2xl border border-rose-500/30 bg-rose-500/10 p-3.5 text-sm font-bold text-rose-300 hover:bg-rose-500/20 transition active:scale-95 cursor-pointer"
+              >
+                <LogOut className="w-4 h-4" />
+                <span>{isRtl ? 'تسجيل الخروج من الحساب' : 'Log Out'}</span>
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={() => {
+                  setIsClientLoginOpen(true);
+                  setIsMobileMenuOpen(false);
+                }}
+                className="w-full flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 p-3.5 text-sm font-black text-white shadow-xl shadow-blue-600/30 transition active:scale-95 cursor-pointer"
+              >
+                <User className="w-4 h-4" />
+                <span>{isRtl ? 'تسجيل الدخول / فتح حساب عميل' : 'Client Sign In / Register'}</span>
+              </button>
             )}
           </div>
-        )}
-      </header>
+        </div>
+      )}
 
       {/* Main Tabbed Container Flow */}
       <main className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8 py-4 md:py-10">
         <div className="space-y-8 animate-fadeIn">
+            {activeTab === 'hero' && (
+              <HomeSection
+                lang={lang}
+                t={t}
+                adminSettings={adminSettings}
+                projects={projects}
+                publishedProjects={publishedProjects}
+                onNavigate={(tab) => scrollToSection(tab)}
+                onLaunchSandbox={handleLaunchAppInSandbox}
+                targetWhatsAppNumber={adminSettings?.targetWhatsAppNumber || '201024889921'}
+                showToast={showToast}
+              />
+            )}
+
+            {activeTab === 'articles' && (
+              <CmsArticlesSection
+                lang={lang}
+                isAdmin={isAdmin}
+                onOpenAdminCms={() => setIsAdminDashboardOpen(true)}
+                showToast={showToast}
+              />
+            )}
+
+            {activeTab === 'about' && (
+              <AboutUsSection
+                lang={lang}
+                onClose={() => scrollToSection('hero')}
+              />
+            )}
+
             {activeTab === 'store' && (
               <AppStore
                 apps={projects as any}
@@ -906,8 +1114,8 @@ export default function App() {
 
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                       <div className="lg:col-span-2 space-y-6">
-                        <NotificationCenter 
-                          notifications={notifications.filter(n => n.userId === currentUser?.id)} 
+                        <ClientNotificationsSection 
+                          currentUser={currentUser}
                           lang={lang} 
                           onRefresh={refreshStorageData} 
                         />
@@ -917,6 +1125,11 @@ export default function App() {
                             lang={lang} 
                           />
                         </div>
+                        <SupportHelpCenter 
+                          lang={lang} 
+                          currentUser={currentUser} 
+                          showToast={showToast} 
+                        />
                       </div>
 
                       <div className="space-y-6">

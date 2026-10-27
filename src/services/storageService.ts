@@ -236,6 +236,25 @@ export interface SubscriptionPlan {
   accentColor?: string;
 }
 
+export interface PurchasedSystemRecord {
+  id: string; // e.g. sys-1
+  projectId: string;
+  projectTitleAr: string;
+  projectTitleEn: string;
+  category: string;
+  planType: 'monthly' | 'annual' | 'full';
+  amount: string;
+  licenseKey: string; // e.g. LERN-2026-E49A-7B8C
+  certificateNumber: string; // e.g. CERT-LW-2026-9921
+  status: 'active' | 'pending' | 'suspended';
+  isConfirmed: boolean;
+  confirmedAt?: string;
+  purchasedAt: string;
+  sourceCodeUrl?: string;
+  sandboxTheme?: 'ocean' | 'midnight' | 'emerald' | 'amber';
+  notes?: string;
+}
+
 export interface UserAccount {
   id: string;
   name: string;
@@ -244,6 +263,16 @@ export interface UserAccount {
   email?: string;
   createdAt: string;
   purchasedPlanId?: string;
+  isBlocked?: boolean;
+  blockReason?: string;
+  role?: 'client' | 'vip' | 'support_agent' | 'moderator' | 'developer' | 'general_manager' | string;
+  roleAr?: string;
+  jobTitle?: string; // Mسمى وظيفي مخصص e.g. "مدير تسويق تقني", "مشرف سنتر المعادي"
+  notificationsEnabled?: boolean;
+  purchasedSystems?: PurchasedSystemRecord[];
+  deviceOs?: string;
+  isVerified?: boolean;
+  verifiedAt?: string;
 }
 
 export interface PublishedProject {
@@ -298,7 +327,12 @@ export interface UserOrder {
   paymentMethod: string;
   referenceId: string;
   createdAt: string;
-  status: 'pending' | 'active';
+  status: 'pending' | 'active' | 'confirmed';
+  projectId?: string;
+  projectTitle?: string;
+  licenseKey?: string;
+  confirmedAt?: string;
+  adminNotes?: string;
 }
 
 export interface MediaResourceItem {
@@ -450,14 +484,17 @@ export interface AiCallRecord {
 
 export interface UserNotification {
   id: string;
-  userId: string;
+  userId: string; // Specific user ID, or 'admin', or 'all'
+  targetRole?: 'admin' | 'user' | 'all';
   titleAr: string;
   titleEn: string;
   messageAr: string;
   messageEn: string;
-  type: 'status_change' | 'system' | 'admin_note';
+  type: 'status_change' | 'system' | 'admin_note' | 'order_placed' | 'order_confirmed' | 'draft_submitted' | 'ticket_message' | 'role_promoted' | 'account_blocked' | 'system_activated';
   read: boolean;
   createdAt: string;
+  linkUrl?: string;
+  metadata?: Record<string, any>;
 }
 
 export interface StaffMember {
@@ -707,15 +744,178 @@ const DEFAULT_INITIAL_ANNOUNCEMENTS: AnnouncementBanner[] = [
   }
 ];
 
+const DEFAULT_INITIAL_USERS: UserAccount[] = [
+  {
+    id: 'u-tarek-vip',
+    name: 'أ. طارق عبد الرحمن',
+    phone: '01024889921',
+    password: '123',
+    email: 'tarek@lernweb.com',
+    createdAt: '2026-02-10T11:00:00.000Z',
+    purchasedPlanId: 'plan-annual',
+    role: 'vip',
+    roleAr: 'عميل VIP مميز',
+    jobTitle: 'مدير أكاديمية النخبة للغات والرياضيات',
+    isBlocked: false,
+    notificationsEnabled: true,
+    deviceOs: 'Windows 11 / Chrome PWA',
+    purchasedSystems: [
+      {
+        id: 'sys-order-1',
+        projectId: 'lms-core-hub',
+        projectTitleAr: 'منظومة إدارة المراكز والسناتر التعليمية (LMS Core)',
+        projectTitleEn: 'LMS Core Educational Center Manager',
+        category: 'lms',
+        planType: 'annual',
+        amount: '8,500 ج.م',
+        licenseKey: 'LERN-2026-9E4B-8821',
+        certificateNumber: 'CERT-LW-2026-0042',
+        status: 'active',
+        isConfirmed: true,
+        confirmedAt: '2026-02-12T14:30:00.000Z',
+        purchasedAt: '2026-02-11T10:15:00.000Z',
+        sourceCodeUrl: 'https://github.com/m77257578-del/lern-web4',
+        sandboxTheme: 'ocean',
+        notes: 'تم التأكيد والاعتماد الرسمي من الإدارة وتفعيل خوادم Edge السحابية'
+      }
+    ]
+  },
+  {
+    id: 'u-heba-client',
+    name: 'د. هبة الشناوي',
+    phone: '01123456789',
+    password: '123',
+    email: 'heba@academy.edu',
+    createdAt: '2026-03-01T09:30:00.000Z',
+    purchasedPlanId: 'plan-buyout',
+    role: 'client',
+    roleAr: 'عميل معتمد',
+    jobTitle: 'مشرفة قسم الاختبارات والمناهج',
+    isBlocked: false,
+    notificationsEnabled: true,
+    deviceOs: 'macOS Sonoma / Safari PWA',
+    purchasedSystems: [
+      {
+        id: 'sys-order-2',
+        projectId: 'quiz-proctor-ai',
+        projectTitleAr: 'منظومة الاختبارات الآمنة ومنع الغش (Proctor AI)',
+        projectTitleEn: 'Proctor AI Secure Examination Suite',
+        category: 'quiz',
+        planType: 'full',
+        amount: '27,000 ج.م',
+        licenseKey: 'LERN-2026-PENDING-F120',
+        certificateNumber: 'CERT-LW-2026-0089',
+        status: 'pending',
+        isConfirmed: false,
+        purchasedAt: new Date(Date.now() - 3600000 * 2).toISOString(),
+        notes: 'طلب شراء تملك كود مصدري بانتظار تأكيد وتفعيل الإدارة باللوحة'
+      }
+    ]
+  },
+  {
+    id: 'u-ibrahim-dev',
+    name: 'م. إبراهيم كمال',
+    phone: '01234567890',
+    password: '123',
+    email: 'ibrahim@code.dev',
+    createdAt: '2026-03-15T16:00:00.000Z',
+    role: 'developer',
+    roleAr: 'مطور برمجيات معتمد',
+    jobTitle: 'مهندس دمج واجهات PWA وAPI',
+    isBlocked: false,
+    notificationsEnabled: false,
+    deviceOs: 'Ubuntu Linux / Firefox',
+    purchasedSystems: []
+  }
+];
+
+const DEFAULT_INITIAL_ORDERS: UserOrder[] = [
+  {
+    id: 'order-101',
+    userId: 'u-tarek-vip',
+    userName: 'أ. طارق عبد الرحمن',
+    userPhone: '01024889921',
+    projectId: 'lms-core-hub',
+    projectTitle: 'منظومة إدارة المراكز والسناتر التعليمية (LMS Core)',
+    planType: 'annual',
+    amount: '8,500 ج.م',
+    paymentMethod: 'انستاباي (InstaPay)',
+    referenceId: 'IPN-99248102',
+    createdAt: '2026-02-11T10:15:00.000Z',
+    status: 'confirmed',
+    licenseKey: 'LERN-2026-9E4B-8821',
+    confirmedAt: '2026-02-12T14:30:00.000Z',
+    adminNotes: 'تم التأكيد والاعتماد وتفعيل السيرفرات السحابية'
+  },
+  {
+    id: 'order-102',
+    userId: 'u-heba-client',
+    userName: 'د. هبة الشناوي',
+    userPhone: '01123456789',
+    projectId: 'quiz-proctor-ai',
+    projectTitle: 'منظومة الاختبارات الآمنة ومنع الغش (Proctor AI)',
+    planType: 'full',
+    amount: '27,000 ج.م',
+    paymentMethod: 'فودافون كاش (Vodafone Cash)',
+    referenceId: 'VF-44820199',
+    createdAt: new Date(Date.now() - 3600000 * 2).toISOString(),
+    status: 'pending',
+    licenseKey: '',
+    adminNotes: 'بانتظار مراجعة التحويل واعتماد التفعيل من الإدارة'
+  }
+];
+
+const DEFAULT_INITIAL_NOTIFICATIONS: UserNotification[] = [
+  {
+    id: 'notif-admin-1',
+    userId: 'admin',
+    targetRole: 'admin',
+    titleAr: '🛒 طلب شراء نظام جديد بانتظار التأكيد',
+    titleEn: '🛒 New Platform Order Pending Confirmation',
+    messageAr: 'قام العميل د. هبة الشناوي بطلب شراء منظومة الاختبارات الآمنة (Proctor AI) بمبلغ 27,000 ج.م عبر فودافون كاش. يرجى مراجعة وتأكيد وتفعيل الشراء.',
+    messageEn: 'Dr. Heba El-Shennawy requested Proctor AI buyout (27,000 EGP) via Vodafone Cash. Please review and confirm.',
+    type: 'order_placed',
+    read: false,
+    createdAt: new Date(Date.now() - 3600000 * 2).toISOString(),
+    linkUrl: '#orders'
+  },
+  {
+    id: 'notif-admin-2',
+    userId: 'admin',
+    targetRole: 'admin',
+    titleAr: '🤖 مسودة ذكاء اصطناعي جديدة بانتظار المراجعة',
+    titleEn: '🤖 New AI Customization Staged Draft',
+    messageAr: 'قام زائر/عميل برفع مسودة تخصيص بالذكاء الاصطناعي لمنظومة إدارة السناتر التعليمية بهوية جديدة واسم مركز جديد.',
+    messageEn: 'A client submitted an AI customization draft for review.',
+    type: 'draft_submitted',
+    read: false,
+    createdAt: new Date(Date.now() - 3600000 * 5).toISOString(),
+    linkUrl: '#drafts'
+  },
+  {
+    id: 'notif-client-1',
+    userId: 'u-tarek-vip',
+    targetRole: 'user',
+    titleAr: '🎉 تم تأكيد وتفعيل منظومتك بنجاح!',
+    titleEn: '🎉 Platform Purchase Confirmed & Activated!',
+    messageAr: 'تهانينا! تم تأكيد وتفعيل شراء منظومة إدارة المراكز والسناتر (LMS Core). كود الترخيص الرسمي: LERN-2026-9E4B-8821. يمكنك الآن تشغيل المنظومة في المحاكي وتنزيل ملفات الكود المصدري.',
+    messageEn: 'Congratulations! Your LMS Core platform is confirmed and active. License Key: LERN-2026-9E4B-8821.',
+    type: 'system_activated',
+    read: false,
+    createdAt: '2026-02-12T14:35:00.000Z',
+    linkUrl: '#client-portal'
+  }
+];
+
 let cachedProjects: ProjectItem[] = [...DEFAULT_INITIAL_PROJECTS];
 let cachedPublishedProjects: PublishedProject[] = [];
 let cachedSettings: AdminSettings | null = null;
 let cachedWallets: WalletConfig[] = [];
 let cachedPlans: SubscriptionPlan[] = [];
 let cachedDrafts: AiCustomizationDraft[] = [];
-let cachedUsers: UserAccount[] = [];
+let cachedUsers: UserAccount[] = [...DEFAULT_INITIAL_USERS];
 let cachedMedia: MediaResourceItem[] = [];
-let cachedOrders: UserOrder[] = [];
+let cachedOrders: UserOrder[] = [...DEFAULT_INITIAL_ORDERS];
 let cachedReviews: ProjectReview[] = [];
 let cachedLogs: ActivityLogItem[] = [];
 export interface AchievementItem {
@@ -772,7 +972,7 @@ const DEFAULT_INITIAL_ACHIEVEMENTS: AchievementItem[] = [
 
 let cachedChats: ChatMessage[] = [];
 let cachedTickets: SupportTicket[] = [];
-let cachedNotifications: UserNotification[] = [];
+let cachedNotifications: UserNotification[] = [...DEFAULT_INITIAL_NOTIFICATIONS];
 let cachedArticles: CmsArticle[] = [...DEFAULT_INITIAL_ARTICLES];
 let cachedFaqs: FaqItem[] = [...DEFAULT_INITIAL_FAQS];
 let cachedAnnouncements: AnnouncementBanner[] = [...DEFAULT_INITIAL_ANNOUNCEMENTS];
@@ -783,7 +983,43 @@ if (typeof window !== 'undefined') {
   try {
     const rawCalls = localStorage.getItem('lernweb_ai_call_history');
     if (rawCalls) cachedCallHistory = JSON.parse(rawCalls);
-  } catch {}
+
+    const rawUsers = localStorage.getItem('lernweb_users_backup');
+    if (rawUsers) {
+      const parsedUsers = JSON.parse(rawUsers);
+      if (Array.isArray(parsedUsers) && parsedUsers.length > 0) {
+        const idMap = new Map(cachedUsers.map(u => [u.id, u]));
+        parsedUsers.forEach(u => idMap.set(u.id, { ...idMap.get(u.id), ...u }));
+        cachedUsers = Array.from(idMap.values());
+      }
+    }
+
+    const rawTickets = localStorage.getItem('lernweb_tickets_backup');
+    if (rawTickets) {
+      const parsedTickets = JSON.parse(rawTickets);
+      if (Array.isArray(parsedTickets) && parsedTickets.length > 0) {
+        cachedTickets = parsedTickets;
+      }
+    }
+
+    const rawOrders = localStorage.getItem('lernweb_orders_backup');
+    if (rawOrders) {
+      const parsedOrders = JSON.parse(rawOrders);
+      if (Array.isArray(parsedOrders) && parsedOrders.length > 0) {
+        cachedOrders = parsedOrders;
+      }
+    }
+
+    const rawDrafts = localStorage.getItem('lernweb_drafts_backup');
+    if (rawDrafts) {
+      const parsedDrafts = JSON.parse(rawDrafts);
+      if (Array.isArray(parsedDrafts) && parsedDrafts.length > 0) {
+        cachedDrafts = parsedDrafts;
+      }
+    }
+  } catch (e) {
+    console.warn('LocalStorage hydration error:', e);
+  }
 }
 
 let nodeAdminAuth = false;
@@ -1439,6 +1675,16 @@ export const storageService = {
     cachedDrafts.unshift(draft);
     notifyStorageChange();
     saveDocument('drafts', draft);
+
+    // Notify Admin of staged AI customization draft
+    this.sendAdminNotification(
+      '🤖 مسودة تخصيص بالذكاء الاصطناعي جديدة',
+      '🤖 New AI Customization Draft Submitted',
+      `أرسل العميل (${draft.visitorName || 'زائر'} - هاتف: ${draft.visitorPhone || 'غير مسجل'}) مسودة تخصيص بالذكاء الاصطناعي لمنصة: [${draft.projectTitle}] باسم مركز: "${draft.modifiedConfig?.centerName || 'بدون اسم'}".`,
+      `New AI draft from ${draft.visitorName || 'Visitor'} for ${draft.projectTitle}.`,
+      'draft_submitted',
+      { draftId: draft.id, visitorId: draft.visitorId }
+    );
   },
 
   updateAiDraftStatus(draftId: string, newStatus: any, notes?: string): void {
@@ -1447,6 +1693,25 @@ export const storageService = {
     const target = cachedDrafts.find(d => d.id === draftId);
     if (target) {
       saveDocument('drafts', target);
+      if (target.visitorId) {
+        const statusMapAr: Record<string, string> = {
+          'pending_review': 'قيد المراجعة الفنية',
+          'in_progress': 'قيد التنفيذ والبرمجة والتطوير',
+          'completed': 'تم التنفيذ والتجهيز',
+          'approved_published': 'تم الاعتماد والنشر في المتجر العام',
+          'rejected': 'مرفوض / يحتاج تعديل'
+        };
+        const stLabel = statusMapAr[newStatus] || newStatus;
+        this.sendClientNotification(
+          target.visitorId,
+          `🔔 تحديث حالة طلب تعديل المنصة: [${target.modifiedConfig?.centerName || target.projectTitle}]`,
+          `🔔 Platform Request Status Updated`,
+          `قامت الإدارة بتحديث حالة طلبك للمنصة "${target.modifiedConfig?.centerName || target.projectTitle}" إلى: [${stLabel}]` + (notes ? `\n\nملاحظة الإدارة: ${notes}` : ''),
+          `Your platform request status has been updated to [${newStatus}].`,
+          'status_change',
+          { draftId: target.id, status: newStatus }
+        );
+      }
     }
   },
 
@@ -1466,6 +1731,21 @@ export const storageService = {
     cachedOrders.unshift(order);
     notifyStorageChange();
     saveDocument('user_orders', order);
+    safeFetch('/api/orders', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(order)
+    }).catch(() => {});
+
+    // Notify Admin of new client order
+    this.sendAdminNotification(
+      '🛒 طلب شراء جديد من عميل بالمنصة',
+      '🛒 New Client Platform Order Received',
+      `قام العميل (${order.userName} - هاتف: ${order.userPhone}) بطلب شراء منصة: [${order.projectTitle || order.planType}] بقيمة ${order.amount} عبر [${order.paymentMethod}]. كود العملية: ${order.referenceId || order.id}. يرجى مراجعة وتأكيد الطلب.`,
+      `New order from ${order.userName} (${order.userPhone}) for ${order.projectTitle || order.planType} - ${order.amount}.`,
+      'order_placed',
+      { orderId: order.id, userId: order.userId }
+    );
   },
 
   addReview(review: ProjectReview): void {
@@ -1534,22 +1814,41 @@ export const storageService = {
       return null;
     }
 
-    let user = {
+    let user: UserAccount = {
       id: 'u-' + Math.random().toString(36).substr(2, 9),
       name: name.trim(),
       phone: cleanPhone,
       password,
       email: email ? email.trim() : '',
+      role: 'client',
+      roleAr: 'عميل معتمد',
+      isBlocked: false,
+      notificationsEnabled: true,
+      purchasedSystems: [],
       createdAt: new Date().toISOString()
     };
     this.addUser(user);
     this.saveUserSession(user);
+
+    // Notify Admin of new registration
+    this.sendAdminNotification(
+      '👤 انضمام عميل جديد للمنظومة',
+      '👤 New Client Registered',
+      `سجل عميل جديد بالمنظومة: ${name.trim()} (هاتف: ${cleanPhone}${cleanEmail ? ' | إيميل: ' + cleanEmail : ''}).`,
+      `New client registered: ${name.trim()} (${cleanPhone}).`,
+      'system',
+      { userId: user.id }
+    );
+
     return user;
   },
 
   authenticateUser(phone: string, password: string): UserAccount | null {
     const user = cachedUsers.find(u => u.phone.trim() === phone.trim() && u.password === password);
     if (user) {
+      if (user.isBlocked) {
+        return { ...user, isBlocked: true };
+      }
       this.saveUserSession(user);
       return user;
     }
@@ -1557,6 +1856,7 @@ export const storageService = {
   },
 
   saveUserSession(user: UserAccount): void {
+    if (user.isBlocked) return;
     if (typeof window !== 'undefined') {
       try {
         sessionStorage.setItem('lernweb_user_auth_session', JSON.stringify(user));
@@ -1576,6 +1876,10 @@ export const storageService = {
         name,
         phone,
         email: email || '',
+        role: 'client',
+        roleAr: 'عميل معتمد',
+        notificationsEnabled: true,
+        purchasedSystems: [],
         createdAt: new Date().toISOString()
       };
       this.addUser(user);
@@ -1586,7 +1890,9 @@ export const storageService = {
       saveDocument('users', user);
     }
 
-    this.saveUserSession(user);
+    if (!user.isBlocked) {
+      this.saveUserSession(user);
+    }
     return user;
   },
 
@@ -1594,7 +1900,10 @@ export const storageService = {
     if (typeof window !== 'undefined') {
       try {
         const stored = sessionStorage.getItem('lernweb_user_auth_session') || localStorage.getItem('lernweb_user_auth_session');
-        return stored ? JSON.parse(stored) : null;
+        if (!stored) return null;
+        const parsed = JSON.parse(stored);
+        const liveUser = cachedUsers.find(u => u.id === parsed.id);
+        return liveUser || parsed;
       } catch {
         return null;
       }
@@ -1632,6 +1941,372 @@ export const storageService = {
     return null;
   },
 
+  deleteUser(userId: string): boolean {
+    if (!userId) return false;
+    const target = cachedUsers.find(u => u.id === userId);
+    cachedUsers = cachedUsers.filter(u => u.id !== userId);
+    cachedDrafts = cachedDrafts.filter(d => d.visitorId !== userId);
+    cachedOrders = cachedOrders.filter(o => o.userId !== userId);
+    notifyStorageChange();
+    deleteDocument('users', userId);
+    safeFetch('/api/users/' + userId, { method: 'DELETE' }).catch(err => console.error(err));
+    this.addActivityLog(
+      'user_deleted' as any,
+      `حذف حساب العميل: ${target?.name || userId}`,
+      `Deleted user account: ${target?.name || userId}`
+    );
+    return true;
+  },
+
+  toggleBlockUser(userId: string, isBlocked: boolean, reason?: string): UserAccount | null {
+    const user = cachedUsers.find(u => u.id === userId);
+    if (!user) return null;
+    user.isBlocked = isBlocked;
+    if (reason !== undefined) user.blockReason = reason;
+    notifyStorageChange();
+    saveDocument('users', user);
+    safeFetch('/api/users/' + userId, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ isBlocked, blockReason: reason })
+    }).catch(() => {});
+
+    // Send notification to user
+    if (isBlocked) {
+      this.sendClientNotification(
+        userId,
+        '⚠️ تنبيه إداري: تم حظر وتجميد الحساب',
+        '⚠️ Account Suspended by Administration',
+        `تم إيقاف وتجميد حسابك في المنظومة من قبل إدارة المنصة.` + (reason ? ` السبب: ${reason}` : ''),
+        `Your account has been temporarily suspended by platform administration.` + (reason ? ` Reason: ${reason}` : ''),
+        'account_blocked'
+      );
+    } else {
+      this.sendClientNotification(
+        userId,
+        '✅ تنبيه إداري: تم إلغاء حظر حسابك واستعادة الصلاحيات',
+        '✅ Account Suspension Lifted',
+        'تم رفع الحظر عن حسابك بنجاح من قبل إدارة المنصة ويمكنك الآن متابعة استخدام كافة خدمات المنظومة.',
+        'Your account access has been fully restored by administration.',
+        'system'
+      );
+    }
+
+    this.addActivityLog(
+      'user_status_changed' as any,
+      `${isBlocked ? 'حظر وتجميد' : 'إلغاء حظر'} حساب العميل: ${user.name}`,
+      `${isBlocked ? 'Banned' : 'Unbanned'} client account: ${user.name}`,
+      reason ? `السبب: ${reason}` : undefined
+    );
+    return user;
+  },
+
+  promoteUserRole(userId: string, role: string, roleAr: string, jobTitle?: string): UserAccount | null {
+    const user = cachedUsers.find(u => u.id === userId);
+    if (!user) return null;
+    user.role = role;
+    user.roleAr = roleAr;
+    if (jobTitle !== undefined) user.jobTitle = jobTitle;
+    notifyStorageChange();
+    saveDocument('users', user);
+    safeFetch('/api/users/' + userId, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ role, roleAr, jobTitle })
+    }).catch(() => {});
+
+    // Notify client
+    this.sendClientNotification(
+      userId,
+      `🎖️ تهانينا! تم ترقيتك إلى منصب: [${roleAr}]`,
+      `🎖️ Congratulations! Promoted to [${role}]`,
+      `تم اعتماد ترقية حسابك الرسمي من قبل الإدارة إلى منصب: ${roleAr}` + (jobTitle ? ` بمسمى وظيفي: "${jobTitle}"` : '') + `، وتم منحك الصلاحيات المخصصة لهذا المنصب في المنظومة.`,
+      `Your account has been officially promoted to ${roleAr} (${jobTitle || ''}) by management with enhanced privileges.`,
+      'role_promoted'
+    );
+
+    this.addActivityLog(
+      'user_promoted' as any,
+      `ترقية العميل ${user.name} لمنصب: ${roleAr}`,
+      `Promoted user ${user.name} to role: ${roleAr}`,
+      jobTitle ? `المسمى الوظيفي: ${jobTitle}` : undefined
+    );
+    return user;
+  },
+
+  toggleUserVerification(userId: string, isVerified: boolean): UserAccount | null {
+    const user = cachedUsers.find(u => u.id === userId);
+    if (!user) return null;
+    user.isVerified = isVerified;
+    user.verifiedAt = isVerified ? new Date().toISOString() : undefined;
+    notifyStorageChange();
+    saveDocument('users', user);
+    safeFetch('/api/users/' + userId, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ isVerified, verifiedAt: user.verifiedAt })
+    }).catch(() => {});
+
+    // Notify client
+    if (isVerified) {
+      this.sendClientNotification(
+        userId,
+        '🌟 تهانينا! تم توثيق حسابك رسمياً من قبل الإدارة',
+        '🌟 Account Officially Verified',
+        'تم توثيق حسابك في منصة ليرن ويب بنجاح من قبل الإدارة وتم منحك شارة العميل الموثق والاعتماد الرسمي.',
+        'Your platform account has been officially verified by administration with the verified badge.',
+        'account_verified'
+      );
+    } else {
+      this.sendClientNotification(
+        userId,
+        'ℹ️ تنبيه: تم إزالة حالة التوثيق من حسابك',
+        'ℹ️ Account Verification Status Updated',
+        'تم إزالة شارة التوثيق الرسمية من حسابك مؤقتاً من قبل الإدارة.',
+        'Account verification status has been updated by administration.',
+        'system'
+      );
+    }
+
+    this.addActivityLog(
+      'user_status_changed' as any,
+      `${isVerified ? 'توثيق' : 'إلغاء توثيق'} حساب العميل: ${user.name}`,
+      `${isVerified ? 'Verified' : 'Unverified'} client account: ${user.name}`
+    );
+    return user;
+  },
+
+  confirmUserSystemPurchase(userId: string, systemIdOrOrderId: string): PurchasedSystemRecord | null {
+    const user = cachedUsers.find(u => u.id === userId);
+    if (!user) return null;
+
+    if (!user.purchasedSystems) user.purchasedSystems = [];
+    let system = user.purchasedSystems.find(s => s.id === systemIdOrOrderId || s.projectId === systemIdOrOrderId);
+
+    const now = new Date().toISOString();
+    const hex = Math.random().toString(16).substring(2, 6).toUpperCase();
+    const generatedLicense = `LERN-2026-${hex}-${Math.floor(1000 + Math.random() * 9000)}`;
+    const certNumber = `CERT-LW-2026-${Math.floor(1000 + Math.random() * 9000)}`;
+
+    if (system) {
+      system.isConfirmed = true;
+      system.status = 'active';
+      system.confirmedAt = now;
+      if (!system.licenseKey || system.licenseKey.includes('PENDING')) {
+        system.licenseKey = generatedLicense;
+      }
+      if (!system.certificateNumber) {
+        system.certificateNumber = certNumber;
+      }
+    } else {
+      // Find matching project or order
+      const order = cachedOrders.find(o => o.id === systemIdOrOrderId || (o.userId === userId && o.projectId === systemIdOrOrderId));
+      const project = cachedProjects.find(p => p.id === (order?.projectId || systemIdOrOrderId)) || cachedProjects[0];
+
+      system = {
+        id: 'sys-' + Date.now(),
+        projectId: project.id,
+        projectTitleAr: project.titleAr,
+        projectTitleEn: project.titleEn,
+        category: project.category || 'lms',
+        planType: (order?.planType as any) || 'annual',
+        amount: order?.amount || project.priceAnnual || '8,500 ج.م',
+        licenseKey: generatedLicense,
+        certificateNumber: certNumber,
+        status: 'active',
+        isConfirmed: true,
+        confirmedAt: now,
+        purchasedAt: order?.createdAt || now,
+        sourceCodeUrl: 'https://github.com/m77257578-del/lern-web4',
+        sandboxTheme: project.sandboxConfig?.theme || 'ocean',
+        notes: 'تم التأكيد والاعتماد وتوليد الترخيص الرسمي من الإدارة'
+      };
+      user.purchasedSystems.push(system);
+    }
+
+    // Update order status if exists
+    const matchedOrder = cachedOrders.find(o => o.userId === userId && (o.id === systemIdOrOrderId || o.projectId === system?.projectId));
+    if (matchedOrder) {
+      matchedOrder.status = 'confirmed';
+      matchedOrder.confirmedAt = now;
+      matchedOrder.licenseKey = system.licenseKey;
+      saveDocument('user_orders', matchedOrder);
+    }
+
+    notifyStorageChange();
+    saveDocument('users', user);
+
+    // Notify Client
+    this.sendClientNotification(
+      userId,
+      `🎉 تم تأكيد وتفعيل المنصة: [${system.projectTitleAr}]!`,
+      `🎉 System Confirmed & Activated: [${system.projectTitleEn}]!`,
+      `تهانينا! قامت إدارة المنظومة بمراجعة واعتماد طلب الشراء وتفعيل المنصة لحسابك رسميًا.\n\n• كود الترخيص الرسمي: ${system.licenseKey}\n• رقم شهادة الملكية: ${system.certificateNumber}\n\nيمكنك الآن الدخول إلى تبويب "حسابي والمنصات المشتراة" لتشغيل المنصة في المحاكي وتنزيل الكود المصدري وشهادة الترخيص.`,
+      `Your platform purchase has been approved and activated by administration!\n\nLicense Key: ${system.licenseKey}\nCertificate: ${system.certificateNumber}`,
+      'system_activated',
+      { systemId: system.id, licenseKey: system.licenseKey }
+    );
+
+    this.addActivityLog(
+      'order_confirmed' as any,
+      `تأكيد وتفعيل منصة (${system.projectTitleAr}) للعميل: ${user.name}`,
+      `Confirmed & activated platform (${system.projectTitleEn}) for user: ${user.name}`,
+      `كود الترخيص: ${system.licenseKey}`
+    );
+
+    return system;
+  },
+
+  confirmOrderAndActivateSystem(orderId: string): boolean {
+    const order = cachedOrders.find(o => o.id === orderId);
+    if (!order) return false;
+
+    const user = cachedUsers.find(u => u.id === order.userId);
+    if (!user) return false;
+
+    this.confirmUserSystemPurchase(user.id, order.projectId || order.id);
+    return true;
+  },
+
+  getUserPurchasedSystems(userId: string): PurchasedSystemRecord[] {
+    const user = cachedUsers.find(u => u.id === userId);
+    if (!user || !user.purchasedSystems) return [];
+    return user.purchasedSystems;
+  },
+
+  addPurchasedSystemToUser(userId: string, systemData: Partial<PurchasedSystemRecord>): PurchasedSystemRecord | null {
+    const user = cachedUsers.find(u => u.id === userId);
+    if (!user) return null;
+
+    if (!user.purchasedSystems) user.purchasedSystems = [];
+
+    const hex = Math.random().toString(16).substring(2, 6).toUpperCase();
+    const project = cachedProjects.find(p => p.id === systemData.projectId) || cachedProjects[0];
+
+    const newSys: PurchasedSystemRecord = {
+      id: 'sys-' + Date.now(),
+      projectId: project.id,
+      projectTitleAr: systemData.projectTitleAr || project.titleAr,
+      projectTitleEn: systemData.projectTitleEn || project.titleEn,
+      category: systemData.category || project.category || 'lms',
+      planType: systemData.planType || 'annual',
+      amount: systemData.amount || project.priceAnnual || '8,500 ج.م',
+      licenseKey: systemData.licenseKey || `LERN-2026-${hex}-${Math.floor(1000 + Math.random() * 9000)}`,
+      certificateNumber: systemData.certificateNumber || `CERT-LW-2026-${Math.floor(1000 + Math.random() * 9000)}`,
+      status: systemData.status || 'active',
+      isConfirmed: systemData.isConfirmed !== undefined ? systemData.isConfirmed : true,
+      confirmedAt: new Date().toISOString(),
+      purchasedAt: new Date().toISOString(),
+      sourceCodeUrl: systemData.sourceCodeUrl || 'https://github.com/m77257578-del/lern-web4',
+      sandboxTheme: systemData.sandboxTheme || project.sandboxConfig?.theme || 'ocean',
+      notes: systemData.notes || 'منصة تم تخصيصها وتأكيدها بواسطة الإدارة'
+    };
+
+    user.purchasedSystems.unshift(newSys);
+    notifyStorageChange();
+    saveDocument('users', user);
+
+    this.sendClientNotification(
+      userId,
+      `🎉 تم إضافة وترخيص منصة جديدة لحسابك: [${newSys.projectTitleAr}]`,
+      `🎉 New Platform Added to Your Account: [${newSys.projectTitleEn}]`,
+      `تم تفعيل منصة (${newSys.projectTitleAr}) رسمياً في حسابك. كود الترخيص: ${newSys.licenseKey}.`,
+      `Platform active. License: ${newSys.licenseKey}`,
+      'system_activated'
+    );
+
+    return newSys;
+  },
+
+  toggleClientNotifications(userId: string, enabled: boolean): boolean {
+    const user = cachedUsers.find(u => u.id === userId);
+    if (!user) return false;
+    user.notificationsEnabled = enabled;
+    notifyStorageChange();
+    saveDocument('users', user);
+    const current = this.getCurrentUser();
+    if (current && current.id === userId) {
+      current.notificationsEnabled = enabled;
+      this.saveUserSession(current);
+    }
+    return enabled;
+  },
+
+  sendAdminNotification(titleAr: string, titleEn: string, messageAr: string, messageEn: string, type: any = 'system', metadata?: any): void {
+    const notif: UserNotification = {
+      id: 'notif-admin-' + Date.now() + '-' + Math.random().toString(36).substr(2, 4),
+      userId: 'admin',
+      targetRole: 'admin',
+      titleAr,
+      titleEn,
+      messageAr,
+      messageEn,
+      type,
+      read: false,
+      createdAt: new Date().toISOString(),
+      metadata
+    };
+    cachedNotifications.unshift(notif);
+    notifyStorageChange();
+    saveDocument('notifications', notif);
+  },
+
+  sendClientNotification(userId: string, titleAr: string, titleEn: string, messageAr: string, messageEn: string, type: any = 'system', metadata?: any): void {
+    const notif: UserNotification = {
+      id: 'notif-client-' + Date.now() + '-' + Math.random().toString(36).substr(2, 4),
+      userId,
+      targetRole: 'user',
+      titleAr,
+      titleEn,
+      messageAr,
+      messageEn,
+      type,
+      read: false,
+      createdAt: new Date().toISOString(),
+      metadata
+    };
+    cachedNotifications.unshift(notif);
+    notifyStorageChange();
+    saveDocument('notifications', notif);
+  },
+
+  markNotificationAsRead(notificationId: string): void {
+    cachedNotifications = cachedNotifications.map(n => n.id === notificationId ? { ...n, read: true } : n);
+    notifyStorageChange();
+    const target = cachedNotifications.find(n => n.id === notificationId);
+    if (target) {
+      saveDocument('notifications', target);
+    }
+  },
+
+  respondToClientNotification(notificationId: string, response: 'approved' | 'objected', responseNote?: string): void {
+    cachedNotifications = cachedNotifications.map(n => n.id === notificationId ? { 
+      ...n, 
+      read: true, 
+      responseStatus: response, 
+      responseNote: responseNote || '' 
+    } : n);
+    notifyStorageChange();
+    const target = cachedNotifications.find(n => n.id === notificationId);
+    if (target) {
+      saveDocument('notifications', target);
+
+      const clientName = cachedUsers.find(u => u.id === target.userId)?.name || 'العميل';
+      this.sendAdminNotification(
+        response === 'approved' ? `✅ موافقة العميل على التحديث الإداري` : `⚠️ اعتراض العميل على التحديث الإداري`,
+        response === 'approved' ? `Client Approved Admin Update` : `Client Objected Admin Update`,
+        `قام العميل (${clientName}) بـ [${response === 'approved' ? 'موافقة ✓' : 'اعتراض ✗'}] على الإشعار: "${target.titleAr}".` + (responseNote ? `\nملاحظات العميل: "${responseNote}"` : ''),
+        `Client (${clientName}) responded with [${response}] to notification: ${target.titleEn}.`,
+        'system',
+        { notificationId: target.id, userId: target.userId, response, responseNote }
+      );
+    }
+  },
+
+  getAdminNotifications(): UserNotification[] {
+    return cachedNotifications.filter(n => n.targetRole === 'admin' || n.userId === 'admin' || n.userId === 'all');
+  },
+
   logoutUser(): void {
     if (typeof window !== 'undefined') {
       try {
@@ -1645,13 +2320,7 @@ export const storageService = {
   },
 
   deleteUserAccount(userId: string): boolean {
-    if (!userId) return false;
-    cachedUsers = cachedUsers.filter(u => u.id !== userId);
-    cachedDrafts = cachedDrafts.filter(d => d.visitorId !== userId);
-    cachedOrders = cachedOrders.filter(o => o.userId !== userId);
-    this.logoutUser();
-    safeFetch('/api/users/' + userId, { method: 'DELETE' }).catch(err => console.error(err));
-    return true;
+    return this.deleteUser(userId);
   },
 
   isUserLoggedIn(): boolean {
@@ -1844,6 +2513,29 @@ export const storageService = {
     }
 
     this.saveSupportTicket(ticket);
+
+    // Notify counterpart
+    if (msg.sender === 'user') {
+      this.sendAdminNotification(
+        '💬 رسالة جديدة في تذكرة دعم العميل',
+        '💬 New Support Message from Client',
+        `أرسل العميل (${ticket.userName}${ticket.userPhone ? ' - ' + ticket.userPhone : ''}) رسالة: "${msg.text.slice(0, 80)}${msg.text.length > 80 ? '...' : ''}"`,
+        `Client ${ticket.userName} sent a support message: "${msg.text.slice(0, 80)}"`,
+        'ticket_message',
+        { ticketId: ticket.id, userId: ticket.userId }
+      );
+    } else if (msg.sender === 'admin' && ticket.userId && !ticket.userId.startsWith('guest')) {
+      this.sendClientNotification(
+        ticket.userId,
+        '🛡️ رد جديد من إدارة منصة ليرن ويب',
+        '🛡️ New Reply from Administration',
+        `رد المشرف / الإدارة على تذكرتك: "${msg.text.slice(0, 100)}${msg.text.length > 100 ? '...' : ''}"`,
+        `Admin replied to your support inquiry: "${msg.text.slice(0, 100)}"`,
+        'admin_note',
+        { ticketId: ticket.id }
+      );
+    }
+
     return ticket;
   },
 
@@ -1980,14 +2672,7 @@ export const storageService = {
     saveDocument('notifications', newNotif);
   },
 
-  markNotificationAsRead(notifId: string): void {
-    const notif = cachedNotifications.find(n => n.id === notifId);
-    if (notif) {
-      notif.read = true;
-      notifyStorageChange();
-      saveDocument('notifications', notif);
-    }
-  },
+
 
   clearUserNotifications(userId: string): void {
     const toDelete = cachedNotifications.filter(n => n.userId === userId);

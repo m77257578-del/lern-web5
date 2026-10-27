@@ -104,6 +104,14 @@ export default function SecretLoginModal({
         setErrorMsg(isRtl ? 'بيانات الدخول غير صحيحة (رقم الهاتف أو كلمة السر)' : 'Invalid login credentials.');
         return;
       }
+      if (user.isBlocked) {
+        setErrorMsg(
+          isRtl 
+            ? `⚠️ تم حظر هذا الحساب وتجميده من قبل إدارة المنصة.${user.blockReason ? ' السبب: ' + user.blockReason : ''} يرجى التواصل مع إدارة المنظومة.` 
+            : `⚠️ This account has been suspended by administration.${user.blockReason ? ' Reason: ' + user.blockReason : ''}`
+        );
+        return;
+      }
     }
 
     if (user) {

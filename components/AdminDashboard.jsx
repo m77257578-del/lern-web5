@@ -21,7 +21,8 @@ import {
   Layers, UploadCloud, RefreshCw, LogOut, Video, FileText, Star,
   BarChart3, TrendingUp, Users, Download, Activity, PieChart as PieIcon,
   CheckSquare, Square, Settings, Sun, Moon, Monitor,
-  Clock, History, ListFilter, Search, Globe, Send, Bot, User, Crown, HelpCircle, Sliders, Zap, Cpu, Key
+  Clock, History, ListFilter, Search, Globe, Send, Bot, User, Crown, HelpCircle, Sliders, Zap, Cpu, Key,
+  Bell, UserX, UserCheck, Award, Ban, Package, Copy, FileCheck
 } from 'lucide-react';
 import { 
   ResponsiveContainer, AreaChart, Area, BarChart, Bar, 
@@ -63,6 +64,25 @@ export default function AdminDashboard({
   const [userRolesMap, setUserRolesMap] = useState(() => storageService.getUserRoles());
   const [achievementsList, setAchievementsList] = useState(() => storageService.getAllAchievements());
   const [publishedProjects, setPublishedProjects] = useState(() => storageService.getPublishedProjects());
+  const [adminNotifications, setAdminNotifications] = useState(() => storageService.getAdminNotifications());
+  const [showAdminNotifsModal, setShowAdminNotifsModal] = useState(false);
+  const [userSearchQuery, setUserSearchQuery] = useState('');
+  const [userRoleFilter, setUserRoleFilter] = useState('all');
+  
+  // User Management Modals
+  const [selectedUserForRole, setSelectedUserForRole] = useState(null);
+  const [newRoleSelect, setNewRoleSelect] = useState('vip');
+  const [newJobTitleInput, setNewJobTitleInput] = useState('');
+  
+  const [selectedUserForSystems, setSelectedUserForSystems] = useState(null);
+  const [assignSystemProjectId, setAssignSystemProjectId] = useState(projects[0]?.id || 'lms-core-hub');
+  
+  const [selectedUserForBan, setSelectedUserForBan] = useState(null);
+  const [banReasonInput, setBanReasonInput] = useState('');
+  
+  const [selectedUserForMsg, setSelectedUserForMsg] = useState(null);
+  const [directMsgTitle, setDirectMsgTitle] = useState('');
+  const [directMsgContent, setDirectMsgContent] = useState('');
   
   // Achievement form state
   const [newAchTitle, setNewAchTitle] = useState('');
@@ -193,6 +213,7 @@ export default function AdminDashboard({
     setUserRolesMap(storageService.getUserRoles());
     setAchievementsList(storageService.getAllAchievements());
     setPublishedProjects(storageService.getPublishedProjects());
+    setAdminNotifications(storageService.getAdminNotifications());
   };
 
   useEffect(() => {
@@ -4623,46 +4644,125 @@ export default function AdminDashboard({
         {/* SECTION 5: REGISTERED USERS */}
         {activeSection === 'users' && (
           <div className="rounded-3xl border border-slate-800 bg-slate-900/90 p-6 md:p-8 shadow-xl space-y-6">
-            <h3 className="text-xl font-bold text-white">{isRtl ? 'العملاء المسجلون فى المنصة (مع تحديد النظام وتاريخ الاختيار)' : 'Registered Platform Clients (OS & Selection Timestamp)'}</h3>
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+              <div>
+                <h3 className="text-xl font-bold text-white">
+                  {isRtl ? 'إدارة العملاء وتوثيق الحسابات' : 'Client Management & Account Verification'}
+                </h3>
+                <p className="text-xs text-slate-400">
+                  {isRtl ? 'تحكم في حسابات العملاء، توثيق الحسابات، وصلاحيات الأدوار مع إرسال إشعارات فورية.' : 'Manage client accounts, verification badges, and roles with instant notifications.'}
+                </p>
+              </div>
+
+              <div className="flex items-center gap-2 w-full sm:w-auto">
+                <div className="relative flex-1 sm:w-64">
+                  <Search className="absolute right-3.5 top-2.5 w-4 h-4 text-slate-400" />
+                  <input
+                    type="text"
+                    value={userSearchQuery}
+                    onChange={(e) => setUserSearchQuery(e.target.value)}
+                    placeholder={isRtl ? 'بحث برقم الهاتف أو الاسم...' : 'Search by phone or name...'}
+                    className="w-full rounded-xl border border-slate-700 bg-slate-950 pr-10 pl-3.5 py-2 text-xs text-white"
+                  />
+                </div>
+              </div>
+            </div>
+
             <div className="overflow-x-auto">
               <table className="w-full text-right border-collapse text-xs">
                 <thead>
                   <tr className="text-slate-400 border-b border-slate-800">
                     <th className="px-4 py-3">{isRtl ? 'اسم العميل' : 'Client Name'}</th>
                     <th className="px-4 py-3">{isRtl ? 'رقم الهاتف' : 'Phone'}</th>
+                    <th className="px-4 py-3">{isRtl ? 'الدور / الصلاحية' : 'Role'}</th>
+                    <th className="px-4 py-3">{isRtl ? 'توثيق الحساب (Account Verified)' : 'Account Verified'}</th>
                     <th className="px-4 py-3">{isRtl ? 'نظام التشغيل والجهاز' : 'Device / OS'}</th>
-                    <th className="px-4 py-3">{isRtl ? 'الباقة المشترك بها' : 'Subscribed Plan'}</th>
-                    <th className="px-4 py-3">{isRtl ? 'تاريخ ووقت التسجيل' : 'Registration Timestamp'}</th>
+                    <th className="px-4 py-3">{isRtl ? 'تاريخ التسجيل' : 'Registration Timestamp'}</th>
+                    <th className="px-4 py-3 text-center">{isRtl ? 'الإجراءات' : 'Actions'}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-800">
-                  {users.length === 0 ? (
-                    <tr><td colSpan={5} className="px-4 py-8 text-center text-slate-500">{isRtl ? 'لا يوجد عملاء مسجلون بعد.' : 'No registered users.'}</td></tr>
+                  {users.filter(u => {
+                    if (!userSearchQuery) return true;
+                    const q = userSearchQuery.toLowerCase();
+                    return (u.name && u.name.toLowerCase().includes(q)) || (u.phone && u.phone.includes(q));
+                  }).length === 0 ? (
+                    <tr><td colSpan={7} className="px-4 py-8 text-center text-slate-500">{isRtl ? 'لا يوجد عملاء مطابقين للبحث.' : 'No matching clients found.'}</td></tr>
                   ) : (
-                    users.map(u => {
+                    users.filter(u => {
+                      if (!userSearchQuery) return true;
+                      const q = userSearchQuery.toLowerCase();
+                      return (u.name && u.name.toLowerCase().includes(q)) || (u.phone && u.phone.includes(q));
+                    }).map(u => {
                       const userPlan = plans.find(p => p.id === u.purchasedPlanId);
                       const formattedDate = u.createdAt 
                         ? new Date(u.createdAt).toLocaleString(isRtl ? 'ar-EG' : 'en-US', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })
                         : (isRtl ? 'اليوم' : 'Today');
                       return (
-                        <tr key={u.id} className="text-slate-300">
-                          <td className="px-4 py-3 font-bold text-white">{u.name}</td>
+                        <tr key={u.id} className="text-slate-300 hover:bg-slate-950/50 transition">
+                          <td className="px-4 py-3 font-bold text-white flex items-center gap-2">
+                            <span>{u.name}</span>
+                            {u.isVerified && (
+                              <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] font-bold bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">
+                                <CheckCircle2 className="w-3 h-3 text-cyan-400" />
+                                <span>{isRtl ? 'موثق' : 'Verified'}</span>
+                              </span>
+                            )}
+                          </td>
                           <td className="px-4 py-3 font-mono">{u.phone}</td>
+                          <td className="px-4 py-3">
+                            <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 bg-blue-500/20 text-blue-400 font-bold">
+                              {u.roleAr || 'عميل معتمد'}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3">
+                            {/* Account Verified Toggle Switch */}
+                            <label className="relative inline-flex items-center cursor-pointer select-none">
+                              <input
+                                type="checkbox"
+                                checked={!!u.isVerified}
+                                onChange={(e) => {
+                                  const newState = e.target.checked;
+                                  storageService.toggleUserVerification(u.id, newState);
+                                  refreshLocalData();
+                                  triggerSaveNotification(
+                                    newState 
+                                      ? (isRtl ? `تم توثيق حساب العميل ${u.name} وإرسال إشعار فوري له!` : `User ${u.name} verified & notification sent!`)
+                                      : (isRtl ? `تم إلغاء توثيق حساب العميل ${u.name}` : `Verification removed for ${u.name}`)
+                                  );
+                                }}
+                                className="sr-only peer"
+                              />
+                              <div className="w-9 h-5 bg-slate-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:right-[2px] peer-checked:after:right-[unset] peer-checked:after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-cyan-600"></div>
+                              <span className="mr-2 text-[11px] font-bold text-slate-300">
+                                {u.isVerified ? (isRtl ? 'موثق' : 'Verified') : (isRtl ? 'غير موثق' : 'Unverified')}
+                              </span>
+                            </label>
+                          </td>
                           <td className="px-4 py-3">
                             <span className="inline-flex items-center gap-1 rounded-md px-2 py-0.5 bg-slate-800 text-slate-300 font-mono text-[11px]">
                               💻 {u.deviceOs || 'Windows / PWA Web'}
                             </span>
                           </td>
-                          <td className="px-4 py-3">
-                            {userPlan ? (
-                              <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 bg-blue-500/20 text-blue-400 font-bold">
-                                {isRtl ? userPlan.nameAr : userPlan.nameEn}
-                              </span>
-                            ) : (
-                              <span className="text-slate-500">{isRtl ? 'لا يوجد باقة' : 'No Plan'}</span>
-                            )}
-                          </td>
                           <td className="px-4 py-3 text-slate-400 font-mono">{formattedDate}</td>
+                          <td className="px-4 py-3 text-center">
+                            <div className="flex items-center justify-center gap-1.5">
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  if (window.confirm(isRtl ? `حذف حساب العميل ${u.name} نهائياً؟` : `Delete client ${u.name}?`)) {
+                                    storageService.deleteUser(u.id);
+                                    refreshLocalData();
+                                    triggerSaveNotification(isRtl ? 'تم حذف حساب العميل بنجاح.' : 'User account deleted.');
+                                  }
+                                }}
+                                className="p-1.5 rounded-lg text-rose-400 hover:bg-rose-500/20 transition"
+                                title={isRtl ? 'حذف الحساب' : 'Delete User'}
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </div>
+                          </td>
                         </tr>
                       );
                     })
