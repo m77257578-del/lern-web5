@@ -624,17 +624,8 @@ export default function AppStore({
                       </h3>
                     </div>
 
-                    {/* Interactive Rating Badge */}
-                    <div 
-                      onClick={() => setActiveModalApp(app)}
-                      className="flex items-center gap-1.5 rounded-xl bg-slate-800/80 px-3 py-1.5 text-xs font-semibold text-amber-400 border border-slate-700/60 shrink-0 cursor-pointer hover:border-amber-400 transition"
-                      title={isRtl ? 'انقر لترك تقييم وقراءة آراء العملاء' : 'Click to rate & review'}
-                    >
-                      <Star className="w-4 h-4 fill-amber-400 text-amber-400" />
-                      <span>{currentAvg}</span>
-                      <span className="text-slate-500 font-normal">({currentCount})</span>
+                      {/* Rating Badge moved below */}
                     </div>
-                  </div>
 
                   {/* Tagline & Detailed Functionality Breakdown */}
                   <p className="text-sm md:text-base font-medium text-slate-200">
@@ -685,6 +676,24 @@ export default function AppStore({
                       </div>
                     ))}
                   </div>
+
+                  {/* Rating Display under each project */}
+                  <div 
+                    onClick={() => setActiveModalApp(app)}
+                    className="flex items-center gap-1.5 rounded-xl bg-slate-800/40 px-3 py-2 text-xs font-bold text-amber-400 border border-slate-700/40 w-fit cursor-pointer hover:bg-slate-800 transition"
+                    title={isRtl ? 'التقييمات والمراجعات' : 'Ratings & Reviews'}
+                  >
+                    <div className="flex gap-0.5">
+                      {[...Array(5)].map((_, i) => (
+                        <Star 
+                          key={i} 
+                          className={`w-3.5 h-3.5 ${i < Math.floor(currentAvg) ? 'fill-amber-400 text-amber-400' : 'text-slate-600'}`} 
+                        />
+                      ))}
+                    </div>
+                    <span>{currentAvg}</span>
+                    <span className="text-slate-500 font-normal">({currentCount} {isRtl ? 'تقييم' : 'reviews'})</span>
+                  </div>
                 </div>
 
                 {/* Installation CTA Link Routing & Action Buttons */}
@@ -721,7 +730,7 @@ export default function AppStore({
                       rel="noreferrer"
                       className="flex items-center justify-center gap-2 rounded-xl border border-emerald-500/50 bg-emerald-600/15 px-4 py-2.5 text-xs md:text-sm font-bold text-emerald-400 hover:bg-emerald-600 hover:text-white transition-all shadow"
                     >
-                      <span>💬 {isRtl ? 'طلب عبر واتساب' : 'Order via WhatsApp'}</span>
+                      <span>{isRtl ? 'طلبهم' : 'Request them'}</span>
                     </a>
                   </div>
 
@@ -948,7 +957,7 @@ export default function AppStore({
                       rel="noreferrer"
                       className="w-full flex items-center justify-center gap-1 py-2 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs transition"
                     >
-                      <span>💬 {isRtl ? 'طلب شهري' : 'Order Monthly'}</span>
+                      <span>{isRtl ? 'طلبهم' : 'Request them'}</span>
                     </a>
                   </div>
 
@@ -978,7 +987,7 @@ export default function AppStore({
                       rel="noreferrer"
                       className="w-full flex items-center justify-center gap-1 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs transition"
                     >
-                      <span>💬 {isRtl ? 'طلب سنوي' : 'Order Annual'}</span>
+                      <span>{isRtl ? 'طلبهم' : 'Request them'}</span>
                     </a>
                   </div>
 
@@ -1005,7 +1014,7 @@ export default function AppStore({
                       rel="noreferrer"
                       className="w-full flex items-center justify-center gap-1 py-2 rounded-lg bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs transition"
                     >
-                      <span>💬 {isRtl ? 'طلب تمليك' : 'Order Buyout'}</span>
+                      <span>{isRtl ? 'طلبهم' : 'Request them'}</span>
                     </a>
                   </div>
                 </div>

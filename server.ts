@@ -1498,7 +1498,7 @@ ${clientAiContext ? `\n[CLIENT LIVE UI CONTEXT]\n${clientAiContext}\n` : ''}
 
   // Robust Multi-Model AI Generator with Smart Synthesis Fallback for 429 Quota Limits
   async function generateAiContentWithRetry(params: any, maxRotationAttempts = 3) {
-    const candidateModels = ['gemini-3.8-flash'];
+    const candidateModels = ['gemini-1.5-flash'];
     let lastError: any = null;
 
     const timeoutMs = 25000;
@@ -1629,13 +1629,13 @@ ${clientAiContext ? `\n[CLIENT LIVE UI CONTEXT]\n${clientAiContext}\n` : ''}
       aiContext, 
       attachments = [], 
       provider = 'gemini', 
-      model = 'gemini-3.8-flash', 
+      model = 'gemini-1.5-flash', 
       openAiApiKey 
     } = req.body || {};
 
-    const chosenGeminiModel = model && ['gemini-3.8-flash'].includes(model) 
+    const chosenGeminiModel = model && ['gemini-1.5-flash', 'gemini-1.5-pro'].includes(model) 
       ? model 
-      : 'gemini-3.8-flash';
+      : 'gemini-1.5-flash';
 
     try {
       if (!message && (!attachments || attachments.length === 0)) {
@@ -1736,9 +1736,9 @@ ${comprehensiveKnowledge}
         parts: currentParts
       });
 
-      const chosenGeminiModel = model && ['gemini-3.8-flash'].includes(model) 
+      const chosenGeminiModel = model && ['gemini-1.5-flash', 'gemini-1.5-pro'].includes(model) 
         ? model 
-        : 'gemini-3.8-flash';
+        : 'gemini-1.5-flash';
 
       const response = await generateAiContentWithRetry({
         contents: contents,

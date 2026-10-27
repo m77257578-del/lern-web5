@@ -289,6 +289,8 @@ export interface PublishedProject {
   websiteUrl: string;
   imageUrl: string;
   videoUrl?: string;
+  rating?: number;
+  reviewsCount?: number;
   createdAt: string;
 }
 

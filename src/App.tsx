@@ -1253,94 +1253,110 @@ export default function App() {
 
       {/* Floating Support & Administration Chat Widget */}
       {adminSettings.isAiChatEnabled !== false && (
-        <>
-          <motion.div 
-            className="fixed bottom-6 right-6 z-50"
-            initial={{ scale: 0, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            whileHover={{ scale: 1.1 }}
+        <div className="fixed bottom-6 right-6 z-50">
+          <motion.button
+            onClick={() => setIsAiChatOpen(!isAiChatOpen)}
+            className={`relative rounded-full p-4 text-white shadow-2xl transition-all duration-300 cursor-pointer border border-white/20 overflow-hidden ${
+              isAiChatOpen 
+                ? 'bg-slate-800' 
+                : 'bg-gradient-to-br from-blue-600 to-indigo-700 hover:from-blue-500 hover:to-indigo-600'
+            }`}
+            title={isRtl ? 'المساعد الذكي والدعم الآلي المباشر (24/7)' : 'AI Assistant & Automated Support'}
+            whileHover={{ scale: 1.1, rotate: 5 }}
             whileTap={{ scale: 0.9 }}
+            animate={isAiChatOpen ? {} : {
+              boxShadow: [
+                "0 0 0 0px rgba(37, 99, 235, 0.2)",
+                "0 0 0 15px rgba(37, 99, 235, 0)",
+                "0 0 0 0px rgba(37, 99, 235, 0.2)"
+              ],
+              scale: [1, 1.05, 1]
+            }}
+            transition={isAiChatOpen ? {} : {
+              boxShadow: {
+                duration: 2,
+                repeat: Infinity,
+                ease: "easeInOut"
+              },
+              scale: {
+                duration: 2,
+                repeat: Infinity,
+                ease: "easeInOut"
+              }
+            }}
           >
-            {/* Glowing Aura Effect */}
-            <motion.div
-              className="absolute inset-0 rounded-full bg-blue-500/40 blur-xl"
-              animate={{
-                scale: [1, 1.4, 1],
-                opacity: [0.3, 0.7, 0.3],
-              }}
-              transition={{
-                duration: 3,
-                repeat: Infinity,
-                ease: "easeInOut",
-              }}
-            />
-
-            <motion.button
-              onClick={() => setIsAiChatOpen(!isAiChatOpen)}
-              className="relative rounded-full bg-gradient-to-br from-indigo-600 via-blue-600 to-purple-600 p-4 text-white shadow-2xl transition-all duration-300 cursor-pointer border border-white/20 overflow-hidden"
-              animate={{
-                y: [0, -6, 0],
-              }}
-              transition={{
-                duration: 4,
-                repeat: Infinity,
-                ease: "easeInOut",
-              }}
-              title={isRtl ? 'المساعد الذكي والدعم الآلي المباشر (24/7)' : 'AI Assistant & Automated Support'}
-            >
-              {/* Inner breathing pulse overlay */}
-              <motion.div
-                className="absolute inset-0 bg-white/10"
-                animate={{
-                  opacity: [0, 0.2, 0],
-                }}
-                transition={{
-                  duration: 2,
-                  repeat: Infinity,
-                  ease: "linear",
-                }}
+            {/* Animated Halo Ring */}
+            {!isAiChatOpen && (
+              <motion.div 
+                className="absolute inset-0 rounded-full border-2 border-blue-400/30"
+                animate={{ scale: [1, 1.5], opacity: [0.5, 0] }}
+                transition={{ duration: 1.5, repeat: Infinity, ease: "easeOut" }}
               />
-              
-              <AnimatePresence mode="wait">
-                {isAiChatOpen ? (
-                  <motion.div
-                    key="close"
-                    initial={{ rotate: -90, opacity: 0, scale: 0.5 }}
-                    animate={{ rotate: 0, opacity: 1, scale: 1 }}
-                    exit={{ rotate: 90, opacity: 0, scale: 0.5 }}
-                    transition={{ duration: 0.2 }}
-                  >
-                    <X className="w-8 h-8" />
-                  </motion.div>
-                ) : (
-                  <motion.div
-                    key="bot"
-                    initial={{ scale: 0.5, opacity: 0 }}
-                    animate={{ scale: 1, opacity: 1 }}
-                    exit={{ scale: 1.5, opacity: 0 }}
-                    transition={{ duration: 0.2 }}
-                  >
-                    <Bot className="w-8 h-8" />
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </motion.button>
-          </motion.div>
+            )}
+            
+            {isAiChatOpen ? (
+              <X className="w-8 h-8 relative z-10" />
+            ) : (
+              <motion.div 
+                className="relative"
+                whileHover="hover"
+              >
+                <Bot className="w-9 h-9 relative z-10" />
+                
+                {/* Floating Reactions on Hover */}
+                <motion.div 
+                  className="absolute -top-6 -left-2 text-lg"
+                  variants={{
+                    hover: { opacity: 1, y: -10, scale: 1.2, transition: { delay: 0.1 } }
+                  }}
+                  initial={{ opacity: 0, y: 0, scale: 0.5 }}
+                >
+                  😊
+                </motion.div>
+                <motion.div 
+                  className="absolute -top-8 left-6 text-lg"
+                  variants={{
+                    hover: { opacity: 1, y: -15, scale: 1.2, transition: { delay: 0.2 } }
+                  }}
+                  initial={{ opacity: 0, y: 0, scale: 0.5 }}
+                >
+                  ⚡
+                </motion.div>
+                <motion.div 
+                  className="absolute -top-4 -right-6 text-lg"
+                  variants={{
+                    hover: { opacity: 1, y: -5, scale: 1.2, transition: { delay: 0.3 } }
+                  }}
+                  initial={{ opacity: 0, y: 0, scale: 0.5 }}
+                >
+                  🤖
+                </motion.div>
+
+                <motion.div 
+                  className="absolute -top-1 -right-1"
+                  animate={{ y: [0, -3, 0] }}
+                  transition={{ duration: 1, repeat: Infinity }}
+                >
+                  <Sparkles className="w-4 h-4 text-amber-300" />
+                </motion.div>
+              </motion.div>
+            )}
+          </motion.button>
 
           <AnimatePresence>
             {isAiChatOpen && (
               <motion.div 
                 className="fixed bottom-24 left-4 right-4 md:left-auto md:right-8 z-[9999] w-auto md:w-96 max-w-[calc(100vw-2rem)] shadow-2xl"
-                initial={{ opacity: 0, y: 50, scale: 0.9, filter: "blur(10px)" }}
-                animate={{ opacity: 1, y: 0, scale: 1, filter: "blur(0px)" }}
-                exit={{ opacity: 0, y: 50, scale: 0.9, filter: "blur(10px)" }}
+                initial={{ opacity: 0, y: 50, scale: 0.9 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: 50, scale: 0.9 }}
                 transition={{ type: "spring", damping: 25, stiffness: 300 }}
               >
                 <AiSupportChat lang={lang} currentUser={currentUser} settings={adminSettings} />
               </motion.div>
             )}
           </AnimatePresence>
-        </>
+        </div>
       )}
 
       <WelcomeModal

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ExternalLink, Video, Plus, Trash2, Save, Image as ImageIcon, FileText, Calendar, X } from 'lucide-react';
+import { ExternalLink, Video, Plus, Trash2, Save, Image as ImageIcon, FileText, Calendar, X, Star } from 'lucide-react';
 import { PublishedProject, storageService } from '../services/storageService';
 
 interface Props {
@@ -178,6 +178,13 @@ export const PublishedProjectsSection: React.FC<Props> = ({ projects, lang, isAd
                   <p className="text-sm text-slate-400 leading-relaxed line-clamp-3 font-medium">
                     {isRtl ? project.descriptionAr : project.descriptionEn}
                   </p>
+                  
+                  {/* Rating Display */}
+                  <div className="flex items-center gap-1.5 text-xs font-bold text-amber-400 pt-1">
+                    <Star className="w-3.5 h-3.5 fill-amber-400" />
+                    <span>{project.rating || 5.0}</span>
+                    <span className="text-slate-500 font-normal">({project.reviewsCount || 0})</span>
+                  </div>
                 </div>
 
                 <div className="pt-6 border-t border-slate-800/80 flex items-center justify-between">

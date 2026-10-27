@@ -1,7 +1,7 @@
 /**
  * Project: ليرن ويب | Lern Web
  * File: src/services/geminiService.ts
- * Free Gemini AI Customization Service (gemini-3.8-flash)
+ * Free Gemini AI Customization Service (gemini-1.5-flash)
  * Clones original files, analyzes visitor prompts, and produces staged drafts for Admin review.
  */
 

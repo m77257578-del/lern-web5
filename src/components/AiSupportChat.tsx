@@ -55,7 +55,7 @@ export default function AiSupportChat({ lang = 'ar', currentUser, settings }: Ai
 
   // AI Provider & Model Selection (Exclusively Gemini Engine)
   const [selectedProvider] = useState<'gemini'>('gemini');
-  const [selectedModel] = useState<string>('gemini-3.8-flash');
+  const [selectedModel] = useState<string>('gemini-1.5-flash');
 
   // Key Pool Metrics State
   const [keyPoolStatus, setKeyPoolStatus] = useState<{
@@ -519,7 +519,7 @@ export default function AiSupportChat({ lang = 'ar', currentUser, settings }: Ai
           senderName: isRtl ? 'المساعد الذكي لمنصة ليرن ويب' : 'Lern Web AI Assistant', 
           text: aiReplyResult.text,
           provider: 'gemini',
-          model: 'gemini-3.8-flash'
+          model: 'gemini-1.5-flash'
         }
       );
       setTicket(updatedTicket);
@@ -539,7 +539,7 @@ export default function AiSupportChat({ lang = 'ar', currentUser, settings }: Ai
           senderName: isRtl ? 'المساعد الذكي لمنصة ليرن ويب' : 'Lern Web AI Assistant', 
           text: fallbackReply,
           provider: 'gemini',
-          model: 'gemini-3.8-flash'
+          model: 'gemini-1.5-flash'
         }
       );
       setTicket(updatedTicket);
@@ -743,7 +743,7 @@ export default function AiSupportChat({ lang = 'ar', currentUser, settings }: Ai
             <div className="bg-slate-800/90 border border-slate-700 px-4 py-2.5 rounded-2xl rounded-bl-none text-xs text-slate-300 flex items-center gap-2">
               <span className="w-2 h-2 rounded-full bg-blue-400 animate-ping" />
               <span>
-                {isRtl ? 'جاري تحليل استفسارك وإعداد الرد الذكي الفوري عبر Gemini (25+ مفتاح)...' : 'Analyzing query & generating AI response via Gemini 25+ Key Pool...'}
+                {isRtl ? 'جاري تحليل استفسارك وإعداد الرد الذكي الفوري...' : 'Analyzing query & generating AI response...'}
               </span>
             </div>
           </div>

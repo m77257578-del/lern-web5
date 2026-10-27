@@ -151,9 +151,15 @@ export default function AdminDashboard({
   const [isCopilotLoading, setIsCopilotLoading] = useState(false);
   const [copilotGeneratedItem, setCopilotGeneratedItem] = useState(null);
 
-  const [isAiChatEnabled, setIsAiChatEnabled] = useState(settings.isAiChatEnabled !== false);
+  const [isAiChatEnabled, setIsAiChatEnabled] = useState(() => (settings?.isAiChatEnabled !== false));
   const [customGeminiKeyInput, setCustomGeminiKeyInput] = useState('');
-  const [keyPoolStatus, setKeyPoolStatus] = useState({ totalKeys: 25, activeKeys: 25, coolingDownKeys: 0, slots: [] });
+  const [keyPoolStatus, setKeyPoolStatus] = useState({ 
+    totalKeys: 25, 
+    activeKeys: 25, 
+    coolingDownKeys: 0, 
+    slots: [],
+    hasOpenAiKey: false
+  });
   const [isAiKeysLoading, setIsAiKeysLoading] = useState(false);
   const [openAiKeySettingInput, setOpenAiKeySettingInput] = useState(settings?.openAiApiKey || '');
   const [preferredAiEngineSetting, setPreferredAiEngineSetting] = useState(settings?.preferredAiProvider || 'gemini');
@@ -1458,7 +1464,7 @@ export default function AdminDashboard({
         {/* Main Section Navigation Tabs */}
         <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-slate-800 bg-slate-900/90 p-1.5 shadow">
           {[
-            { id: 'ai-keys', label: isRtl ? '🤖 إعدادات المساعد الذكي' : '🤖 AI Assistant Configuration', icon: Bot, highlight: true },
+            { id: 'ai-keys', label: isRtl ? '🤖 المساعد والردود الذكية' : '🤖 Assistant & Smart Replies', icon: Bot, highlight: true },
             { id: 'preferences', label: isRtl ? '🎨 تصميم ومظهر المنصة الشامل' : '🎨 Platform Design & Theme', icon: Settings },
             { id: 'staff', label: isRtl ? '👥 إدارة المشرفين وخدمة العملاء' : '👥 Staff & Support Team', icon: Users, count: staffList.length },
             { id: 'user-roles', label: isRtl ? '🛡️ أدوار وصلاحيات المستخدمين' : '🛡️ User Roles & Permissions', icon: ShieldCheck, count: Object.keys(userRolesMap).length },
@@ -1505,16 +1511,21 @@ export default function AdminDashboard({
           })}
         </div>
 
-        {/* SECTION: AI ASSISTANT CONFIGURATION */}
+        {/* SECTION: AI ASSISTANT CONFIGURATION & KEY POOL */}
         {activeSection === 'ai-keys' && (
-          <div className="space-y-6 animate-fadeIn">
+          <div className="space-y-8 animate-fadeIn">
             <div className="rounded-3xl border border-blue-500/30 bg-gradient-to-r from-blue-950 via-slate-900 to-indigo-950 p-6 md:p-8 shadow-2xl space-y-3">
+              <div className="inline-flex items-center gap-2 rounded-full border border-blue-500/30 bg-blue-500/10 px-4 py-1.5 text-xs font-semibold text-blue-400">
+                <Zap className="w-4 h-4 text-amber-400" />
+                <span>{isRtl ? 'إعدادات المساعد الذكي ومجمع المفاتيح (Gemini AI)' : 'AI Assistant & Key Pool (Gemini AI)'}</span>
+              </div>
               <h2 className="text-2xl font-extrabold text-white">{isRtl ? 'إعدادات المساعد الذكي (AI Assistant)' : 'AI Assistant Configuration'}</h2>
-              <p className="text-sm text-slate-300">{isRtl ? 'تحكم في تفعيل المساعد الذكي وإدارة مفاتيح Gemini' : 'Control AI Assistant visibility and manage Gemini API keys.'}</p>
+              <p className="text-sm text-slate-300">{isRtl ? 'تحكم في تفعيل المساعد الذكي وإدارة مجمع مفاتيح Gemini وتجاوز حدود الحصص.' : 'Control AI Assistant visibility and manage Gemini key pool with auto-rotation.'}</p>
             </div>
             
-            <div className="rounded-3xl border border-slate-800 bg-slate-900 p-6 space-y-6">
-              <div className="flex items-center justify-between">
+            {/* AI Visibility & Welcome Messages */}
+            <div className="rounded-3xl border border-slate-800 bg-slate-900 p-6 space-y-6 shadow-xl">
+              <div className="flex items-center justify-between border-b border-slate-800 pb-4">
                 <div>
                   <h4 className="text-sm font-bold text-white">{isRtl ? 'تفعيل شات المساعد الذكي' : 'Enable AI Chat Widget'}</h4>
                   <p className="text-xs text-slate-400">{isRtl ? 'يظهر للعملاء في الزاوية' : 'Visible to clients in the corner'}</p>
@@ -1527,48 +1538,285 @@ export default function AdminDashboard({
                 </button>
               </div>
 
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <label className="text-xs font-bold text-slate-300">{isRtl ? 'رسالة الترحيب (عربي)' : 'Welcome Message (AR)'}</label>
-                  <textarea
-                    value={settings.aiWelcomeMessageAr || ''}
-                    onChange={(e) => setSettings({...settings, aiWelcomeMessageAr: e.target.value})}
-                    className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3.5 py-2.5 text-xs text-white"
-                  />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold text-slate-300">{isRtl ? 'رسالة الترحيب (عربي)' : 'Welcome Message (AR)'}</label>
+                    <textarea
+                      value={settings.aiWelcomeMessageAr || ''}
+                      onChange={(e) => setSettings({...settings, aiWelcomeMessageAr: e.target.value})}
+                      className="w-full h-24 rounded-xl border border-slate-700 bg-slate-950 px-3.5 py-2.5 text-xs text-white"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold text-slate-300">{isRtl ? 'رسالة الترحيب (إنجليزي)' : 'Welcome Message (EN)'}</label>
+                    <textarea
+                      value={settings.aiWelcomeMessageEn || ''}
+                      onChange={(e) => setSettings({...settings, aiWelcomeMessageEn: e.target.value})}
+                      className="w-full h-24 rounded-xl border border-slate-700 bg-slate-950 px-3.5 py-2.5 text-xs text-white"
+                    />
+                  </div>
                 </div>
-                <div className="space-y-2">
-                  <label className="text-xs font-bold text-slate-300">{isRtl ? 'رسالة الترحيب (إنجليزي)' : 'Welcome Message (EN)'}</label>
-                  <textarea
-                    value={settings.aiWelcomeMessageEn || ''}
-                    onChange={(e) => setSettings({...settings, aiWelcomeMessageEn: e.target.value})}
-                    className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3.5 py-2.5 text-xs text-white"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-xs font-bold text-slate-300">{isRtl ? 'رسالة الرد التلقائي عند الخطأ (عربي)' : 'Fallback Reply (AR)'}</label>
-                  <textarea
-                    value={settings.aiFallbackReplyAr || ''}
-                    onChange={(e) => setSettings({...settings, aiFallbackReplyAr: e.target.value})}
-                    className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3.5 py-2.5 text-xs text-white"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-xs font-bold text-slate-300">{isRtl ? 'رسالة الرد التلقائي عند الخطأ (إنجليزي)' : 'Fallback Reply (EN)'}</label>
-                  <textarea
-                    value={settings.aiFallbackReplyEn || ''}
-                    onChange={(e) => setSettings({...settings, aiFallbackReplyEn: e.target.value})}
-                    className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3.5 py-2.5 text-xs text-white"
-                  />
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold text-slate-300">{isRtl ? 'رسالة الرد التلقائي عند الخطأ (عربي)' : 'Fallback Reply (AR)'}</label>
+                    <textarea
+                      value={settings.aiFallbackReplyAr || ''}
+                      onChange={(e) => setSettings({...settings, aiFallbackReplyAr: e.target.value})}
+                      className="w-full h-24 rounded-xl border border-slate-700 bg-slate-950 px-3.5 py-2.5 text-xs text-white"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold text-slate-300">{isRtl ? 'رسالة الرد التلقائي عند الخطأ (إنجليزي)' : 'Fallback Reply (EN)'}</label>
+                    <textarea
+                      value={settings.aiFallbackReplyEn || ''}
+                      onChange={(e) => setSettings({...settings, aiFallbackReplyEn: e.target.value})}
+                      className="w-full h-24 rounded-xl border border-slate-700 bg-slate-950 px-3.5 py-2.5 text-xs text-white"
+                    />
+                  </div>
                 </div>
               </div>
 
-              <button
-                onClick={saveAiSettings}
-                disabled={isAiKeysLoading}
-                className="w-full rounded-xl bg-blue-600 py-3 text-sm font-bold text-white transition hover:bg-blue-500 disabled:opacity-50"
-              >
-                {isAiKeysLoading ? (isRtl ? 'جاري الحفظ...' : 'Saving...') : (isRtl ? 'حفظ الإعدادات' : 'Save Settings')}
-              </button>
+              <div className="flex justify-end">
+                <button
+                  onClick={saveAiSettings}
+                  disabled={isAiKeysLoading}
+                  className="px-8 rounded-xl bg-blue-600 py-3 text-sm font-bold text-white transition hover:bg-blue-500 disabled:opacity-50 flex items-center gap-2"
+                >
+                  <Save className="w-4 h-4" />
+                  {isAiKeysLoading ? (isRtl ? 'جاري الحفظ...' : 'Saving...') : (isRtl ? 'حفظ رسائل المساعد' : 'Save Assistant Messages')}
+                </button>
+              </div>
+            </div>
+
+            {/* Metrics Overview Grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="rounded-2xl border border-slate-800 bg-slate-900/90 p-5 space-y-2 shadow-lg">
+                <div className="flex items-center justify-between text-slate-400">
+                  <span className="text-xs font-bold">{isRtl ? 'إجمالي قنوات المفاتيح' : 'Total Key Slots'}</span>
+                  <div className="w-8 h-8 rounded-xl bg-blue-500/20 text-blue-400 flex items-center justify-center">
+                    <Zap className="w-4 h-4" />
+                  </div>
+                </div>
+                <div className="text-2xl md:text-3xl font-black text-white">{keyPoolStatus.totalKeys}</div>
+                <p className="text-[11px] text-emerald-400 font-semibold">{isRtl ? 'يتجاوز 20 مفتاحاً معتمد' : 'Exceeds 20 keys'}</p>
+              </div>
+
+              <div className="rounded-2xl border border-emerald-500/30 bg-emerald-950/20 p-5 space-y-2 shadow-lg">
+                <div className="flex items-center justify-between text-emerald-300">
+                  <span className="text-xs font-bold">{isRtl ? 'قنوات نشطة جاهزة' : 'Active & Ready'}</span>
+                  <div className="w-8 h-8 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center">
+                    <CheckCircle2 className="w-4 h-4" />
+                  </div>
+                </div>
+                <div className="text-2xl md:text-3xl font-black text-emerald-400">{keyPoolStatus.activeKeys}</div>
+                <p className="text-[11px] text-emerald-300">{isRtl ? 'جاهز للاستجابة الفورية' : 'Zero-latency failover'}</p>
+              </div>
+
+              <div className="rounded-2xl border border-amber-500/30 bg-amber-950/20 p-5 space-y-2 shadow-lg">
+                <div className="flex items-center justify-between text-amber-300">
+                  <span className="text-xs font-bold">{isRtl ? 'قنوات في فترة راحة (429)' : 'Cooling Down'}</span>
+                  <div className="w-8 h-8 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center">
+                    <RefreshCw className="w-4 h-4" />
+                  </div>
+                </div>
+                <div className="text-2xl md:text-3xl font-black text-amber-400">{keyPoolStatus.coolingDownKeys}</div>
+                <p className="text-[11px] text-amber-300">{isRtl ? 'تتعافى تلقائياً بعد 60 ثانية' : 'Auto-recovers in 60s'}</p>
+              </div>
+
+              <div className="rounded-2xl border border-slate-800 bg-slate-900/90 p-5 space-y-2 shadow-lg">
+                <div className="flex items-center justify-between text-slate-400">
+                  <span className="text-xs font-bold">{isRtl ? 'حالة محرك ChatGPT' : 'ChatGPT Engine'}</span>
+                  <div className="w-8 h-8 rounded-xl bg-purple-500/20 text-purple-400 flex items-center justify-center">
+                    <Cpu className="w-4 h-4" />
+                  </div>
+                </div>
+                <div className="text-xl font-black text-white">
+                  {keyPoolStatus.hasOpenAiKey || openAiKeySettingInput ? (
+                    <span className="text-emerald-400 flex items-center gap-1">
+                      <Check className="w-4 h-4" /> {isRtl ? 'مُفعّل' : 'Configured'}
+                    </span>
+                  ) : (
+                    <span className="text-slate-400 text-sm">{isRtl ? 'متاح للإضافة' : 'Available'}</span>
+                  )}
+                </div>
+                <p className="text-[11px] text-slate-400 font-mono">GPT-4o / GPT-4o-mini</p>
+              </div>
+            </div>
+
+            {/* ChatGPT Integration Form */}
+            <div className="rounded-3xl border border-slate-800 bg-slate-900/90 p-6 md:p-8 shadow-xl space-y-4">
+              <div className="flex items-center gap-3 border-b border-slate-800 pb-4">
+                <div className="p-2.5 rounded-2xl bg-emerald-500/20 text-emerald-400">
+                  <Cpu className="w-6 h-6" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-white">
+                    {isRtl ? 'تكامل محرك ChatGPT (OpenAI Integration)' : 'OpenAI ChatGPT Integration'}
+                  </h3>
+                  <p className="text-xs text-slate-400">
+                    {isRtl ? 'أدخل مفتاح OpenAI API Key الخاص بك لتفعيل نماذج GPT-4o لزوار ومستخدمي المنصة' : 'Enter your OpenAI API key to enable GPT-4o models across the platform.'}
+                  </p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-slate-300">{isRtl ? 'مفتاح OpenAI API Key:' : 'OpenAI API Key:'}</label>
+                  <input 
+                    type="password"
+                    value={openAiKeySettingInput}
+                    onChange={(e) => setOpenAiKeySettingInput(e.target.value)}
+                    placeholder="sk-proj-..."
+                    className="w-full rounded-2xl border border-slate-800 bg-slate-950 px-4 py-3 text-xs md:text-sm font-mono text-white focus:border-emerald-500 focus:outline-none"
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-slate-300">{isRtl ? 'المحرك الافتراضي في المحادثة:' : 'Default Chat Engine:'}</label>
+                  <select
+                    value={preferredAiEngineSetting}
+                    onChange={(e) => setPreferredAiEngineSetting(e.target.value)}
+                    className="w-full rounded-2xl border border-slate-800 bg-slate-950 px-4 py-3 text-xs md:text-sm text-white focus:border-emerald-500 focus:outline-none"
+                  >
+                    <option value="gemini">{isRtl ? 'Google Gemini AI (مجمع 25+ مفتاح مجاني)' : 'Google Gemini AI (25+ Key Pool)'}</option>
+                    <option value="chatgpt">{isRtl ? 'OpenAI ChatGPT (GPT-4o & GPT-4o-mini)' : 'OpenAI ChatGPT (GPT-4o)'}</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="flex justify-end pt-2">
+                <button
+                  type="button"
+                  onClick={async () => {
+                    setIsAiKeysLoading(true);
+                    try {
+                      const res = await fetch('/api/ai/keys', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                          openAiApiKey: openAiKeySettingInput.trim(),
+                          preferredAiProvider: preferredAiEngineSetting
+                        })
+                      });
+                      const data = await res.json();
+                      if (data.keysStatus) setKeyPoolStatus(data.keysStatus);
+                      triggerSaveNotification(isRtl ? 'تم حفظ وتحديث إعدادات ChatGPT ومحرك الذكاء الاصطناعي بنجاح!' : 'OpenAI settings saved!');
+                    } catch (e) {
+                      alert('Failed to save OpenAI settings');
+                    } finally {
+                      setIsAiKeysLoading(false);
+                    }
+                  }}
+                  disabled={isAiKeysLoading}
+                  className="px-6 py-3 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs md:text-sm font-bold shadow-lg transition active:scale-95 cursor-pointer flex items-center gap-2"
+                >
+                  <Save className="w-4 h-4" />
+                  <span>{isRtl ? 'حفظ إعدادات ChatGPT والمحرك' : 'Save Engine Settings'}</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Gemini Key Pool List & Add Custom Key */}
+            <div className="rounded-3xl border border-slate-800 bg-slate-900/90 p-6 md:p-8 shadow-xl space-y-6">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-slate-800 pb-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-2.5 rounded-2xl bg-blue-500/20 text-blue-400">
+                    <Key className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-bold text-white">
+                      {isRtl ? 'قنوات مجمع مفاتيح جيمناي النشطة (Gemini Rotating Key Pool)' : 'Gemini Key Pool Slots'}
+                    </h3>
+                    <p className="text-xs text-slate-400">
+                      {isRtl ? 'تدوير تلقائي يضمن عمل المنظومة على مدار الساعة بموديل Gemini AI' : 'Round-robin load balanced slots with automatic recovery using Gemini AI'}
+                    </p>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={fetchKeyPoolAdminStatus}
+                  className="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer border border-slate-700"
+                >
+                  <RefreshCw className="w-3.5 h-3.5" />
+                  <span>{isRtl ? 'تحديث حالة القنوات' : 'Refresh Slots'}</span>
+                </button>
+              </div>
+
+              <div className="bg-slate-950 p-4 rounded-2xl border border-slate-800 space-y-3">
+                <label className="text-xs font-bold text-white block">
+                  {isRtl ? '➕ إضافة مفتاح Gemini API إضافي إلى المجمع:' : '➕ Add Custom Gemini API Key:'}
+                </label>
+                <div className="flex flex-col sm:flex-row gap-2">
+                  <input
+                    type="password"
+                    value={customGeminiKeyInput}
+                    onChange={(e) => setCustomGeminiKeyInput(e.target.value)}
+                    placeholder="AIzaSy..."
+                    className="flex-1 rounded-xl border border-slate-800 bg-slate-900 px-4 py-2.5 text-xs font-mono text-white focus:border-blue-500 focus:outline-none"
+                  />
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      if (!customGeminiKeyInput.trim()) return;
+                      const currentCustomKeys = settings.geminiKeyPool || [];
+                      const updated = [...currentCustomKeys, customGeminiKeyInput.trim()];
+                      try {
+                        const res = await fetch('/api/ai/keys', {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ customGeminiKeys: updated })
+                        });
+                        const data = await res.json();
+                        if (data.keysStatus) setKeyPoolStatus(data.keysStatus);
+                        setCustomGeminiKeyInput('');
+                        triggerSaveNotification(isRtl ? 'تمت إضافة المفتاح بنجاح إلى المجمع!' : 'Gemini key added to pool!');
+                      } catch {
+                        alert('Failed to add key');
+                      }
+                    }}
+                    className="px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold transition shrink-0 cursor-pointer flex items-center justify-center gap-1.5"
+                  >
+                    <Plus className="w-4 h-4" />
+                    <span>{isRtl ? 'إضافة للمجمع' : 'Add to Pool'}</span>
+                  </button>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 max-h-[420px] overflow-y-auto p-1">
+                {(keyPoolStatus.slots && keyPoolStatus.slots.length > 0 ? keyPoolStatus.slots : Array.from({ length: 25 }, (_, i) => ({
+                  id: `gemini-key-slot-${i + 1}`,
+                  name: `قناة تدوير مفتاح مجاني نشط #${i + 1}`,
+                  masked: `AIzaSy***${i + 1}`,
+                  status: 'active',
+                  successCount: 0,
+                  failureCount: 0
+                }))).map((slot, idx) => (
+                  <div 
+                    key={slot.id || idx}
+                    className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 space-y-2 hover:border-slate-700 transition"
+                  >
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="font-bold text-white truncate max-w-[170px]">{slot.name}</span>
+                      <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${
+                        slot.status === 'cooling_down'
+                          ? 'bg-amber-500/20 text-amber-300 border-amber-500/40'
+                          : 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'
+                      }`}>
+                        {slot.status === 'cooling_down' 
+                          ? (isRtl ? `راحة (${slot.cooldownRemainingSeconds || 60}ث)` : 'Cooling') 
+                          : (isRtl ? 'نشط 🟢' : 'Active 🟢')}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center justify-between text-[11px] font-mono text-slate-400">
+                      <span>{slot.masked}</span>
+                      <span className="text-emerald-400 font-bold">{slot.successCount || 0} ✓</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         )}
@@ -1953,258 +2201,7 @@ export default function AdminDashboard({
           </div>
         )}
 
-        {/* SECTION: AI KEYS & MULTI-MODEL POOL (25+ KEYS & CHATGPT) */}
-        {activeSection === 'ai-keys' && (
-          <div className="space-y-8 animate-fadeIn">
-            {/* Header Banner */}
-            <div className="rounded-3xl border border-blue-500/30 bg-gradient-to-r from-blue-950 via-slate-900 to-indigo-950 p-6 md:p-8 shadow-2xl space-y-3">
-              <div className="inline-flex items-center gap-2 rounded-full border border-blue-500/30 bg-blue-500/10 px-4 py-1.5 text-xs font-semibold text-blue-400">
-                <Zap className="w-4 h-4 text-amber-400" />
-                <span>{isRtl ? 'مجمع مفاتيح الذكاء الاصطناعي والموديلات (25+ مفتاح مجاني نشط)' : 'AI Key Pool & Multi-Engine Hub (25+ Active Keys)'}</span>
-              </div>
-              <h2 className="text-2xl md:text-3xl font-extrabold text-white">
-                {isRtl ? 'إدارة مجمع المفاتيح وتفعيل ChatGPT والتدوير التلقائي' : 'AI Key Pool & ChatGPT Integration'}
-              </h2>
-              <p className="text-xs md:text-sm text-slate-300 max-w-2xl">
-                {isRtl 
-                  ? 'تم تزويد المنظومة بمجمع يتجاوز 25 مفتاح ذكي لـ Gemini يعمل بالتدوير التلقائي لتجاوز حدود الحصص المجانية (429 Rate Limits)، مع إمكانية إضافة مفاتيح مخصصة وتفعيل محرك ChatGPT (OpenAI) وقراءة الصور والمستندات.'
-                  : 'Equipped with a smart pool of 25+ Gemini keys with round-robin rotation to eliminate 429 quota exhaustion, custom key additions, and OpenAI ChatGPT integration.'}
-              </p>
-            </div>
 
-            {/* Metrics Overview Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              <div className="rounded-2xl border border-slate-800 bg-slate-900/90 p-5 space-y-2 shadow-lg">
-                <div className="flex items-center justify-between text-slate-400">
-                  <span className="text-xs font-bold">{isRtl ? 'إجمالي قنوات المفاتيح' : 'Total Key Slots'}</span>
-                  <div className="w-8 h-8 rounded-xl bg-blue-500/20 text-blue-400 flex items-center justify-center">
-                    <Zap className="w-4 h-4" />
-                  </div>
-                </div>
-                <div className="text-2xl md:text-3xl font-black text-white">{keyPoolStatus.totalKeys}</div>
-                <p className="text-[11px] text-emerald-400 font-semibold">{isRtl ? 'يتجاوز 20 مفتاحاً معتمد' : 'Exceeds 20 keys'}</p>
-              </div>
-
-              <div className="rounded-2xl border border-emerald-500/30 bg-emerald-950/20 p-5 space-y-2 shadow-lg">
-                <div className="flex items-center justify-between text-emerald-300">
-                  <span className="text-xs font-bold">{isRtl ? 'قنوات نشطة جاهزة' : 'Active & Ready'}</span>
-                  <div className="w-8 h-8 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center">
-                    <CheckCircle2 className="w-4 h-4" />
-                  </div>
-                </div>
-                <div className="text-2xl md:text-3xl font-black text-emerald-400">{keyPoolStatus.activeKeys}</div>
-                <p className="text-[11px] text-emerald-300">{isRtl ? 'جاهز للاستجابة الفورية' : 'Zero-latency failover'}</p>
-              </div>
-
-              <div className="rounded-2xl border border-amber-500/30 bg-amber-950/20 p-5 space-y-2 shadow-lg">
-                <div className="flex items-center justify-between text-amber-300">
-                  <span className="text-xs font-bold">{isRtl ? 'قنوات في فترة راحة (429)' : 'Cooling Down'}</span>
-                  <div className="w-8 h-8 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center">
-                    <RefreshCw className="w-4 h-4" />
-                  </div>
-                </div>
-                <div className="text-2xl md:text-3xl font-black text-amber-400">{keyPoolStatus.coolingDownKeys}</div>
-                <p className="text-[11px] text-amber-300">{isRtl ? 'تتعافى تلقائياً بعد 60 ثانية' : 'Auto-recovers in 60s'}</p>
-              </div>
-
-              <div className="rounded-2xl border border-slate-800 bg-slate-900/90 p-5 space-y-2 shadow-lg">
-                <div className="flex items-center justify-between text-slate-400">
-                  <span className="text-xs font-bold">{isRtl ? 'حالة محرك ChatGPT' : 'ChatGPT Engine'}</span>
-                  <div className="w-8 h-8 rounded-xl bg-purple-500/20 text-purple-400 flex items-center justify-center">
-                    <Cpu className="w-4 h-4" />
-                  </div>
-                </div>
-                <div className="text-xl font-black text-white">
-                  {keyPoolStatus.hasOpenAiKey || openAiKeySettingInput ? (
-                    <span className="text-emerald-400 flex items-center gap-1">
-                      <Check className="w-4 h-4" /> {isRtl ? 'مُفعّل' : 'Configured'}
-                    </span>
-                  ) : (
-                    <span className="text-slate-400 text-sm">{isRtl ? 'متاح للإضافة' : 'Available'}</span>
-                  )}
-                </div>
-                <p className="text-[11px] text-slate-400 font-mono">GPT-4o / GPT-4o-mini</p>
-              </div>
-            </div>
-
-            {/* ChatGPT Integration Form */}
-            <div className="rounded-3xl border border-slate-800 bg-slate-900/90 p-6 md:p-8 shadow-xl space-y-4">
-              <div className="flex items-center gap-3 border-b border-slate-800 pb-4">
-                <div className="p-2.5 rounded-2xl bg-emerald-500/20 text-emerald-400">
-                  <Cpu className="w-6 h-6" />
-                </div>
-                <div>
-                  <h3 className="text-lg font-bold text-white">
-                    {isRtl ? 'تكامل محرك ChatGPT (OpenAI Integration)' : 'OpenAI ChatGPT Integration'}
-                  </h3>
-                  <p className="text-xs text-slate-400">
-                    {isRtl ? 'أدخل مفتاح OpenAI API Key الخاص بك لتفعيل نماذج GPT-4o لزوار ومستخدمي المنصة' : 'Enter your OpenAI API key to enable GPT-4o models across the platform.'}
-                  </p>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
-                <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-300">{isRtl ? 'مفتاح OpenAI API Key:' : 'OpenAI API Key:'}</label>
-                  <input 
-                    type="password"
-                    value={openAiKeySettingInput}
-                    onChange={(e) => setOpenAiKeySettingInput(e.target.value)}
-                    placeholder="sk-proj-..."
-                    className="w-full rounded-2xl border border-slate-800 bg-slate-950 px-4 py-3 text-xs md:text-sm font-mono text-white focus:border-emerald-500 focus:outline-none"
-                  />
-                </div>
-
-                <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-300">{isRtl ? 'المحرك الافتراضي في المحادثة:' : 'Default Chat Engine:'}</label>
-                  <select
-                    value={preferredAiEngineSetting}
-                    onChange={(e) => setPreferredAiEngineSetting(e.target.value)}
-                    className="w-full rounded-2xl border border-slate-800 bg-slate-950 px-4 py-3 text-xs md:text-sm text-white focus:border-emerald-500 focus:outline-none"
-                  >
-                    <option value="gemini">{isRtl ? 'Google Gemini 3.8 (مجمع 25+ مفتاح مجاني)' : 'Google Gemini 3.8 (25+ Key Pool)'}</option>
-                    <option value="chatgpt">{isRtl ? 'OpenAI ChatGPT (GPT-4o & GPT-4o-mini)' : 'OpenAI ChatGPT (GPT-4o)'}</option>
-                  </select>
-                </div>
-              </div>
-
-              <div className="flex justify-end pt-2">
-                <button
-                  type="button"
-                  onClick={async () => {
-                    setIsAiKeysLoading(true);
-                    try {
-                      const res = await fetch('/api/ai/keys', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                          openAiApiKey: openAiKeySettingInput.trim(),
-                          preferredAiProvider: preferredAiEngineSetting
-                        })
-                      });
-                      const data = await res.json();
-                      if (data.keysStatus) setKeyPoolStatus(data.keysStatus);
-                      triggerSaveNotification(isRtl ? 'تم حفظ وتحديث إعدادات ChatGPT ومحرك الذكاء الاصطناعي بنجاح!' : 'OpenAI settings saved!');
-                    } catch (e) {
-                      alert('Failed to save OpenAI settings');
-                    } finally {
-                      setIsAiKeysLoading(false);
-                    }
-                  }}
-                  disabled={isAiKeysLoading}
-                  className="px-6 py-3 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs md:text-sm font-bold shadow-lg transition active:scale-95 cursor-pointer flex items-center gap-2"
-                >
-                  <Save className="w-4 h-4" />
-                  <span>{isRtl ? 'حفظ إعدادات ChatGPT والمحرك' : 'Save Engine Settings'}</span>
-                </button>
-              </div>
-            </div>
-
-            {/* Gemini Key Pool List & Add Custom Key */}
-            <div className="rounded-3xl border border-slate-800 bg-slate-900/90 p-6 md:p-8 shadow-xl space-y-6">
-              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-slate-800 pb-4">
-                <div className="flex items-center gap-3">
-                  <div className="p-2.5 rounded-2xl bg-blue-500/20 text-blue-400">
-                    <Key className="w-6 h-6" />
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-bold text-white">
-                      {isRtl ? 'قنوات مجمع مفاتيح جيمناي النشطة (Gemini Rotating Key Pool)' : 'Gemini Key Pool Slots'}
-                    </h3>
-                    <p className="text-xs text-slate-400">
-                      {isRtl ? 'تدوير تلقائي يضمن عمل المنظومة على مدار الساعة' : 'Round-robin load balanced slots with automatic recovery'}
-                    </p>
-                  </div>
-                </div>
-
-                <button
-                  type="button"
-                  onClick={fetchKeyPoolAdminStatus}
-                  className="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer border border-slate-700"
-                >
-                  <RefreshCw className="w-3.5 h-3.5" />
-                  <span>{isRtl ? 'تحديث حالة القنوات' : 'Refresh Slots'}</span>
-                </button>
-              </div>
-
-              {/* Add Custom Gemini Key Field */}
-              <div className="bg-slate-950 p-4 rounded-2xl border border-slate-800 space-y-3">
-                <label className="text-xs font-bold text-white block">
-                  {isRtl ? '➕ إضافة مفتاح Gemini API إضافي إلى المجمع:' : '➕ Add Custom Gemini API Key:'}
-                </label>
-                <div className="flex flex-col sm:flex-row gap-2">
-                  <input
-                    type="password"
-                    value={customGeminiKeyInput}
-                    onChange={(e) => setCustomGeminiKeyInput(e.target.value)}
-                    placeholder="AIzaSy..."
-                    className="flex-1 rounded-xl border border-slate-800 bg-slate-900 px-4 py-2.5 text-xs font-mono text-white focus:border-blue-500 focus:outline-none"
-                  />
-                  <button
-                    type="button"
-                    onClick={async () => {
-                      if (!customGeminiKeyInput.trim()) return;
-                      const currentCustomKeys = settings.geminiKeyPool || [];
-                      const updated = [...currentCustomKeys, customGeminiKeyInput.trim()];
-                      try {
-                        const res = await fetch('/api/ai/keys', {
-                          method: 'POST',
-                          headers: { 'Content-Type': 'application/json' },
-                          body: JSON.stringify({ customGeminiKeys: updated })
-                        });
-                        const data = await res.json();
-                        if (data.keysStatus) setKeyPoolStatus(data.keysStatus);
-                        setCustomGeminiKeyInput('');
-                        triggerSaveNotification(isRtl ? 'تمت إضافة المفتاح بنجاح إلى المجمع!' : 'Gemini key added to pool!');
-                      } catch {
-                        alert('Failed to add key');
-                      }
-                    }}
-                    className="px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold transition shrink-0 cursor-pointer flex items-center justify-center gap-1.5"
-                  >
-                    <Plus className="w-4 h-4" />
-                    <span>{isRtl ? 'إضافة للمجمع' : 'Add to Pool'}</span>
-                  </button>
-                </div>
-              </div>
-
-              {/* Key Slots Grid */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 max-h-[420px] overflow-y-auto p-1">
-                {(keyPoolStatus.slots && keyPoolStatus.slots.length > 0 ? keyPoolStatus.slots : Array.from({ length: 25 }, (_, i) => ({
-                  id: `gemini-key-slot-${i + 1}`,
-                  name: `قناة تدوير مفتاح مجاني نشط #${i + 1}`,
-                  masked: `AIzaSy***${i + 1}`,
-                  status: 'active',
-                  successCount: 0,
-                  failureCount: 0
-                }))).map((slot, idx) => (
-                  <div 
-                    key={slot.id || idx}
-                    className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 space-y-2 hover:border-slate-700 transition"
-                  >
-                    <div className="flex items-center justify-between text-xs">
-                      <span className="font-bold text-white truncate max-w-[170px]">{slot.name}</span>
-                      <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${
-                        slot.status === 'cooling_down'
-                          ? 'bg-amber-500/20 text-amber-300 border-amber-500/40'
-                          : 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'
-                      }`}>
-                        {slot.status === 'cooling_down' 
-                          ? (isRtl ? `راحة (${slot.cooldownRemainingSeconds || 60}ث)` : 'Cooling') 
-                          : (isRtl ? 'نشط 🟢' : 'Active 🟢')}
-                      </span>
-                    </div>
-
-                    <div className="flex items-center justify-between text-[11px] font-mono text-slate-400">
-                      <span>{slot.masked}</span>
-                      <span className="text-emerald-400 font-bold">{slot.successCount || 0} ✓</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        )}
 
         {/* SECTION: SEO MANAGEMENT */}
         {activeSection === 'seo' && (
